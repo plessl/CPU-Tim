@@ -1,0 +1,20 @@
+[
+ {
+  "InstFile" : "/Users/theilmann/Jahresarbeit/rom_test/src/main.v",
+  "InstLine" : 14,
+  "InstName" : "topmodule",
+  "ModuleFile" : "/Users/theilmann/Jahresarbeit/rom_test/src/main.v",
+  "ModuleLine" : 14,
+  "ModuleName" : "topmodule",
+  "SubInsts" : [
+   {
+    "InstFile" : "/Users/theilmann/Jahresarbeit/rom_test/src/main.v",
+    "InstLine" : 38,
+    "InstName" : "rom",
+    "ModuleFile" : "/Users/theilmann/Jahresarbeit/rom_test/src/main.v",
+    "ModuleLine" : 1,
+    "ModuleName" : "rom_module"
+   }
+  ]
+ }
+]

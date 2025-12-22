@@ -1,0 +1,79 @@
+GowinSynthesis start
+Running parser ...
+Analyzing Verilog file '/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv'
+Compiling module 'topmodule'("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":1)
+Compiling module 'ram_module'("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":63)
+Extracting RAM for identifier 'mem'("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":73)
+Compiling module 'rom_module'("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":85)
+Extracting RAM for identifier 'mem'("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":93)
+Compiling module 'fsm'("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":113)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":354)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":450)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":515)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":517)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":519)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":523)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":525)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":527)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":529)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":533)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":535)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":537)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":541)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":543)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":551)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":553)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":555)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":557)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":561)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":562)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":568)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":570)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":571)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":575)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":577)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":584)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":586)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":588)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":590)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":592)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":593)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":599)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":601)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":603)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":604)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":610)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":612)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":614)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":616)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":618)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":620)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":621)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":625)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":627)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":629)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":631)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":633)
+WARN  (EX3858) : System task 'display' is ignored for synthesis("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":467)
+NOTE  (EX0101) : Current top module is "topmodule"
+[5%] Running netlist conversion ...
+Running device independent optimization ...
+[10%] Optimizing Phase 0 completed
+[15%] Optimizing Phase 1 completed
+[25%] Optimizing Phase 2 completed
+Running inference ...
+[30%] Inferring Phase 0 completed
+[40%] Inferring Phase 1 completed
+[50%] Inferring Phase 2 completed
+[55%] Inferring Phase 3 completed
+Running technical mapping ...
+[60%] Tech-Mapping Phase 0 completed
+[65%] Tech-Mapping Phase 1 completed
+[75%] Tech-Mapping Phase 2 completed
+[80%] Tech-Mapping Phase 3 completed
+[90%] Tech-Mapping Phase 4 completed
+WARN  (NL0002) : The module "ram_module" instantiated to "dmem" is swept in optimizing("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":27)
+WARN  (NL0002) : The module "rom_module" instantiated to "imem" is swept in optimizing("/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv":35)
+[95%] Generate netlist file "/Users/theilmann/Jahresarbeit/Prozessor/impl/gwsynthesis/Prozessor.vg" completed
+[100%] Generate report file "/Users/theilmann/Jahresarbeit/Prozessor/impl/gwsynthesis/Prozessor_syn.rpt.html" completed
+GowinSynthesis finish

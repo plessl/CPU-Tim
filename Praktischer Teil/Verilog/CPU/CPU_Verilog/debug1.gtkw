@@ -1,0 +1,33 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Sun Dec  7 10:45:51 2025
+[*]
+[dumpfile] "/Users/theilmann/Jahresarbeit/CPU_Verilog/build/tb_cpu.vcd"
+[dumpfile_mtime] "Sun Dec  7 10:44:13 2025"
+[dumpfile_size] 5997
+[savefile] "/Users/theilmann/Jahresarbeit/CPU_Verilog/debug1.gtkw"
+[timestart] 0
+[size] 1333 600
+[pos] -1 -1
+*0.000000 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+[treeopen] tb_cpu.
+[treeopen] tb_cpu.uut.
+[sst_width] 255
+[signals_width] 136
+[sst_expanded] 1
+[sst_vpaned_height] 159
+@28
+tb_cpu.uut.machine.clk
+@22
+tb_cpu.uut.machine.pc[31:0]
+tb_cpu.uut.machine.pc_next[31:0]
+@28
+tb_cpu.uut.machine.rst
+tb_cpu.uut.machine.state[2:0]
+@22
+tb_cpu.uut.machine.rd[4:0]
+tb_cpu.uut.machine.rs1[4:0]
+@23
+tb_cpu.uut.machine.rs2[4:0]
+[pattern_trace] 1
+[pattern_trace] 0

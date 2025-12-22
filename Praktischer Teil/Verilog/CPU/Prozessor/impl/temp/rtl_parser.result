@@ -1,0 +1,44 @@
+[
+ {
+  "InstFile" : "/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv",
+  "InstLine" : 1,
+  "InstName" : "topmodule",
+  "ModuleFile" : "/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv",
+  "ModuleLine" : 1,
+  "ModuleName" : "topmodule",
+  "SubInsts" : [
+   {
+    "InstFile" : "/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv",
+    "InstLine" : 19,
+    "InstName" : "dmem",
+    "ModuleFile" : "/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv",
+    "ModuleLine" : 63,
+    "ModuleName" : "ram_module"
+   },
+   {
+    "InstFile" : "/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv",
+    "InstLine" : 29,
+    "InstName" : "imem",
+    "ModuleFile" : "/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv",
+    "ModuleLine" : 85,
+    "ModuleName" : "rom_module"
+   },
+   {
+    "InstFile" : "/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv",
+    "InstLine" : 37,
+    "InstName" : "machine",
+    "ModuleFile" : "/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv",
+    "ModuleLine" : 113,
+    "ModuleName" : "fsm"
+   }
+  ]
+ },
+ {
+  "InstFile" : "/Users/theilmann/Jahresarbeit/Prozessor/src/gowin_prom/gowin_prom.v",
+  "InstLine" : 10,
+  "InstName" : "Gowin_pROM",
+  "ModuleFile" : "/Users/theilmann/Jahresarbeit/Prozessor/src/gowin_prom/gowin_prom.v",
+  "ModuleLine" : 10,
+  "ModuleName" : "Gowin_pROM"
+ }
+]

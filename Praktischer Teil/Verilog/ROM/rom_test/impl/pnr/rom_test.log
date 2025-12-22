@@ -1,0 +1,29 @@
+Reading netlist file: "/Users/theilmann/Jahresarbeit/rom_test/impl/gwsynthesis/rom_test.vg"
+Parsing netlist file "/Users/theilmann/Jahresarbeit/rom_test/impl/gwsynthesis/rom_test.vg" completed
+Processing netlist completed
+Reading constraint file: "/Users/theilmann/Jahresarbeit/rom_test/src/rom_test.cst"
+Physical Constraint parsed completed
+Running placement......
+[10%] Placement Phase 0 completed
+[20%] Placement Phase 1 completed
+[30%] Placement Phase 2 completed
+[50%] Placement Phase 3 completed
+Running routing......
+[60%] Routing Phase 0 completed
+[70%] Routing Phase 1 completed
+[80%] Routing Phase 2 completed
+[90%] Routing Phase 3 completed
+Running timing analysis......
+[95%] Timing analysis completed
+Placement and routing completed
+Bitstream generation in progress......
+Bitstream generation completed
+Running power analysis......
+[100%] Power analysis completed
+Generate file "/Users/theilmann/Jahresarbeit/rom_test/impl/pnr/rom_test.power.html" completed
+Generate file "/Users/theilmann/Jahresarbeit/rom_test/impl/pnr/rom_test.pin.html" completed
+Generate file "/Users/theilmann/Jahresarbeit/rom_test/impl/pnr/rom_test.rpt.html" completed
+Generate file "/Users/theilmann/Jahresarbeit/rom_test/impl/pnr/rom_test.rpt.txt" completed
+Generate file "/Users/theilmann/Jahresarbeit/rom_test/impl/pnr/rom_test.tr.html" completed
+Mon Dec 22 16:45:09 2025
+

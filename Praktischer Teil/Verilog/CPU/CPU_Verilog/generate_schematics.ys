@@ -1,0 +1,7 @@
+# Read Verilog source file
+read_verilog -sv src/cpu_synth.v
+
+# Synthesize and generate schematic
+hierarchy -top topmodule
+proc; opt; fsm; opt; memory; opt
+show -prefix cpu_synth_schematic -format pdf -colors 1

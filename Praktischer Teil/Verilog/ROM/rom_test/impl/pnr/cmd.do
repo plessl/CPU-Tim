@@ -1,0 +1,18 @@
+-d /Users/theilmann/Jahresarbeit/rom_test/impl/gwsynthesis/rom_test.vg
+-p GW5A-25B-MBGA121N-1
+-pn GW5A-LV25MG121NC1/I0
+-cst /Users/theilmann/Jahresarbeit/rom_test/src/rom_test.cst
+-cfg /Users/theilmann/Jahresarbeit/rom_test/impl/pnr/device.cfg
+-sdc /Users/theilmann/Jahresarbeit/rom_test/src/rom_test.sdc
+-bit
+-tr
+-ph
+-timing
+-cst_error
+-convert_sdp32_36_to_sdp16_18
+-place_option 0
+-route_option 0
+-clock_route_order 0
+-correct_hold 1
+-route_maxfan 23
+-global_freq 100.000

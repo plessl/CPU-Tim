@@ -1,0 +1,61 @@
+//
+//Written by GowinSynthesis
+//Tool Version "V1.9.12"
+//Mon Dec 22 16:45:19 2025
+
+//Source file index table:
+//file0 "\/Users/theilmann/Jahresarbeit/rom_test/src/main.v"
+`timescale 100 ps/100 ps
+module topmodule (
+  clk,
+  rst,
+  out
+)
+;
+input clk;
+input rst;
+output [7:0] out;
+wire VCC;
+wire GND;
+  OBUF out_0_obuf (
+    .O(out[0]),
+    .I(GND) 
+);
+  OBUF out_1_obuf (
+    .O(out[1]),
+    .I(GND) 
+);
+  OBUF out_2_obuf (
+    .O(out[2]),
+    .I(GND) 
+);
+  OBUF out_3_obuf (
+    .O(out[3]),
+    .I(GND) 
+);
+  OBUF out_4_obuf (
+    .O(out[4]),
+    .I(GND) 
+);
+  OBUF out_5_obuf (
+    .O(out[5]),
+    .I(GND) 
+);
+  OBUF out_6_obuf (
+    .O(out[6]),
+    .I(GND) 
+);
+  OBUF out_7_obuf (
+    .O(out[7]),
+    .I(GND) 
+);
+  VCC VCC_cZ (
+    .V(VCC)
+);
+  GND GND_cZ (
+    .G(GND)
+);
+  GSR GSR (
+    .GSRI(VCC) 
+);
+endmodule /* topmodule */

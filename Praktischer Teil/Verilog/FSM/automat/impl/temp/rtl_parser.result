@@ -1,0 +1,10 @@
+[
+ {
+  "InstFile" : "/Users/theilmann/Jahresarbeit/automat/src/automat.v",
+  "InstLine" : 3,
+  "InstName" : "fsm_led",
+  "ModuleFile" : "/Users/theilmann/Jahresarbeit/automat/src/automat.v",
+  "ModuleLine" : 3,
+  "ModuleName" : "fsm_led"
+ }
+]

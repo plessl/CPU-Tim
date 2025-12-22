@@ -1,0 +1,75 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Sun Dec 21 16:03:27 2025
+[*]
+[dumpfile] "/Users/theilmann/Jahresarbeit/CPU_Verilog/build/tb.vcd"
+[dumpfile_mtime] "Sun Dec 21 14:44:51 2025"
+[dumpfile_size] 54761
+[savefile] "/Users/theilmann/Jahresarbeit/CPU_Verilog/waves.gtkw"
+[timestart] 0
+[size] 1333 1377
+[pos] -1 -1
+*-15.000000 25000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+[markername] AA
+[markername] BB
+[markername] CC
+[markername] DD
+[markername] EE
+[markername] FF
+[markername] GG
+[markername] HH
+[markername] II
+[markername] JJ
+[markername] KK
+[markername] LL
+[markername] MM
+[markername] NN
+[markername] OO
+[markername] PP
+[markername] QQ
+[markername] RR
+[markername] SS
+[markername] TT
+[markername] UU
+[markername] VV
+[markername] WW
+[markername] XX
+[markername] YY
+[markername] ZZ
+[treeopen] tb_cpu.
+[treeopen] tb_cpu.uut.
+[treeopen] tb_cpu.uut.machine.
+[sst_width] 255
+[signals_width] 222
+[sst_expanded] 1
+[sst_vpaned_height] 165
+@28
+tb_cpu.uut.clk
+@420
+tb_cpu.uut.machine.imm[31:0]
+@24
+tb_cpu.uut.machine.rs1[4:0]
+tb_cpu.uut.machine.rd[4:0]
+tb_cpu.uut.machine.rd[4:0]
+tb_cpu.uut.machine.state[2:0]
+@28
+tb_cpu.uut.machine.rst
+@24
+tb_cpu.uut.machine.show_instruction.rd[4:0]
+@22
+tb_cpu.uut.machine.instr[31:0]
+tb_cpu.uut.machine.pc_next[31:0]
+@28
+[color] 2
+tb_cpu.uut.imem.ce
+@23
+tb_cpu.uut.machine.instr_addr[31:0]
+@22
+[color] 2
+tb_cpu.uut.imem.addr[31:0]
+[color] 2
+tb_cpu.uut.machine.pc[31:0]
+[color] 2
+tb_cpu.uut.imem.dout[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

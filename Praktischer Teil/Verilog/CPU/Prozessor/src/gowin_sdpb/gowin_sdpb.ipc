@@ -1,0 +1,17 @@
+[General]
+file=gowin_sdpb
+ipc_version=4
+module=Gowin_SDPB
+target_device=gw5a25b-003
+type=ram_sdpb
+version=1.0
+
+[Config]
+BYTE_SIZE=2
+DEPTH_A=32
+DEPTH_B=32
+LANG=0
+READ=1
+RESET_MODE=false
+WIDTH_A=32
+WIDTH_B=32

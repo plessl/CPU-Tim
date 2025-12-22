@@ -1,0 +1,198 @@
+//
+//Written by GowinSynthesis
+//Tool Version "V1.9.12"
+//Sun Dec 21 15:29:40 2025
+
+//Source file index table:
+//file0 "\/Users/theilmann/Jahresarbeit/Prozessor/src/cpu.sv"
+`timescale 100 ps/100 ps
+module fsm (
+  clk_d,
+  rst_d,
+  pc_Z
+)
+;
+input clk_d;
+input rst_d;
+output [3:2] pc_Z;
+wire n6808_9;
+wire n7865_24;
+wire n2638_5;
+wire pc_next_3_10;
+wire n7866_26;
+wire n7864_22;
+wire n8062_13;
+wire [2:0] state;
+wire [3:2] pc_next;
+wire VCC;
+wire GND;
+  LUT3 n6808_s4 (
+    .F(n6808_9),
+    .I0(state[0]),
+    .I1(state[1]),
+    .I2(state[2]) 
+);
+defparam n6808_s4.INIT=8'h10;
+  LUT3 n7865_s13 (
+    .F(n7865_24),
+    .I0(state[2]),
+    .I1(state[0]),
+    .I2(state[1]) 
+);
+defparam n7865_s13.INIT=8'hB4;
+  LUT2 n2638_s2 (
+    .F(n2638_5),
+    .I0(pc_Z[3]),
+    .I1(pc_Z[2]) 
+);
+defparam n2638_s2.INIT=4'h6;
+  LUT3 pc_next_3_s5 (
+    .F(pc_next_3_10),
+    .I0(state[0]),
+    .I1(state[1]),
+    .I2(state[2]) 
+);
+defparam pc_next_3_s5.INIT=8'h01;
+  LUT2 n7866_s13 (
+    .F(n7866_26),
+    .I0(state[0]),
+    .I1(state[2]) 
+);
+defparam n7866_s13.INIT=4'h9;
+  LUT3 n7864_s13 (
+    .F(n7864_22),
+    .I0(state[0]),
+    .I1(state[2]),
+    .I2(state[1]) 
+);
+defparam n7864_s13.INIT=8'hE8;
+  DFFCE state_1_s0 (
+    .Q(state[1]),
+    .D(n7865_24),
+    .CLK(clk_d),
+    .CLEAR(rst_d),
+    .CE(VCC) 
+);
+  DFFCE pc_3_s0 (
+    .Q(pc_Z[3]),
+    .D(pc_next[3]),
+    .CLK(clk_d),
+    .CLEAR(rst_d),
+    .CE(n6808_9) 
+);
+  DFFCE pc_2_s0 (
+    .Q(pc_Z[2]),
+    .D(pc_next[2]),
+    .CLK(clk_d),
+    .CLEAR(rst_d),
+    .CE(n6808_9) 
+);
+  DFFCE pc_next_3_s0 (
+    .Q(pc_next[3]),
+    .D(n2638_5),
+    .CLK(clk_d),
+    .CLEAR(rst_d),
+    .CE(pc_next_3_10) 
+);
+  DFFCE pc_next_2_s0 (
+    .Q(pc_next[2]),
+    .D(n8062_13),
+    .CLK(clk_d),
+    .CLEAR(rst_d),
+    .CE(pc_next_3_10) 
+);
+  DFFCE state_0_s3 (
+    .Q(state[0]),
+    .D(n7866_26),
+    .CLK(clk_d),
+    .CLEAR(rst_d),
+    .CE(VCC) 
+);
+defparam state_0_s3.INIT=1'b0;
+  DFFCE state_2_s4 (
+    .Q(state[2]),
+    .D(n7864_22),
+    .CLK(clk_d),
+    .CLEAR(rst_d),
+    .CE(VCC) 
+);
+defparam state_2_s4.INIT=1'b0;
+  INV n8062_s9 (
+    .O(n8062_13),
+    .I(pc_Z[2]) 
+);
+  VCC VCC_cZ (
+    .V(VCC)
+);
+  GND GND_cZ (
+    .G(GND)
+);
+endmodule /* fsm */
+module topmodule (
+  clk,
+  rst,
+  pc_trace
+)
+;
+input clk;
+input rst;
+output [3:0] pc_trace;
+wire clk_d;
+wire rst_d;
+wire [3:2] pc_trace_d;
+wire [3:2] pc_Z;
+wire VCC;
+wire GND;
+  IBUF clk_ibuf (
+    .O(clk_d),
+    .I(clk) 
+);
+  IBUF rst_ibuf (
+    .O(rst_d),
+    .I(rst) 
+);
+  OBUF pc_trace_0_obuf (
+    .O(pc_trace[0]),
+    .I(GND) 
+);
+  OBUF pc_trace_1_obuf (
+    .O(pc_trace[1]),
+    .I(GND) 
+);
+  OBUF pc_trace_2_obuf (
+    .O(pc_trace[2]),
+    .I(pc_trace_d[2]) 
+);
+  OBUF pc_trace_3_obuf (
+    .O(pc_trace[3]),
+    .I(pc_trace_d[3]) 
+);
+  DFFCE pc_trace_2_s1 (
+    .Q(pc_trace_d[2]),
+    .D(pc_Z[2]),
+    .CLK(clk_d),
+    .CLEAR(GND),
+    .CE(VCC) 
+);
+  DFFCE pc_trace_3_s2 (
+    .Q(pc_trace_d[3]),
+    .D(pc_Z[3]),
+    .CLK(clk_d),
+    .CLEAR(GND),
+    .CE(VCC) 
+);
+  fsm machine (
+    .clk_d(clk_d),
+    .rst_d(rst_d),
+    .pc_Z(pc_Z[3:2])
+);
+  VCC VCC_cZ (
+    .V(VCC)
+);
+  GND GND_cZ (
+    .G(GND)
+);
+  GSR GSR (
+    .GSRI(VCC) 
+);
+endmodule /* topmodule */

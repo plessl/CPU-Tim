@@ -1,0 +1,6 @@
+GowinSynthesis start
+Running parser ...
+Analyzing Verilog file '/Users/theilmann/Jahresarbeit/rom_test/src/main.v'
+ERROR (EX3587) : Module instantiations in compilation scope are not allowed("/Users/theilmann/Jahresarbeit/rom_test/src/main.v":46)
+Verilog file '/Users/theilmann/Jahresarbeit/rom_test/src/main.v' ignored due to errors
+GowinSynthesis finish

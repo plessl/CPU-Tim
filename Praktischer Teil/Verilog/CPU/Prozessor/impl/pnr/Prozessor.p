@@ -1,0 +1,68 @@
+`pragma protect begin_protected
+`pragma protect version="1.0"
+`pragma protect author="default"
+`pragma protect author_info="default"
+`pragma protect encrypt_agent="GOWIN"
+`pragma protect encrypt_agent_info="GOWIN Encrypt Version 1.0"
+
+`pragma protect encoding=(enctype="base64", line_length=76, bytes=256)
+`pragma protect key_keyowner="GOWIN",key_keyname="GWK2022-11",key_method="rsa"
+`pragma protect key_block
+pBfDpf/a+fAQ9aSCJsLZn9t4XHKvACUoTYm7yoQtBoc1wI3LdejZxhePFgaBLzxG1QUsTfS4cao3
+LhGfOL9gQGZJcPhl3es9ZFzaGfk22n1ZXRai81feZTw+j7/LNnixyaI5yRWVHIy7af4scjGHpmdm
+H0KDe/18YGiD23+UfOT7eHyuIq7ixLE2KUBtPK46XWEeZ1LuVOmDK3MOck6fzRbJbQqZnbiI+27L
+13BCheI7S9kzsDHZAdHm9WR2ecR+E2DS+M/g60bbABNA5u4X2ganhM5eeQTsEoLLTayLo/GVw0YL
+fEObRgzR8HfLwOuRi/0D8uGwznSctdTYcz3zMw==
+
+`pragma protect encoding=(enctype="base64", line_length=76, bytes=496)
+`pragma protect data_keyowner="default-ip-vendor"
+`pragma protect data_keyname="default-ip-key"
+`pragma protect data_method="aes128-cbc"
+`pragma protect data_block
+CMCfiOm9r2i9vbbgywvURjl2BLlSq1N/QL2+eywK3AqrRfWKCoMPV4eug3dP0bNsBwU1HrRji/xI
+4BpYRTjGglf6kl4MfaqkiFh213D188ek6ZEMMpc22y0YTfbN2JyfbQHPU85PFQj1cZJJTnrThr12
+jfjVoKkFX0JnyiiVaO3giqtcbK2mdFfUpGm7cosal4buA/8CRej3bHFp2tTNhaPvqzJWh0Com0Kj
+kGAmyiAWquycN8G2w8D7HDBOISg8MnQA9vXtNj88rq//Ul431VSYHOivPi8oZ9YQgqXyqYQx3X5j
+J3nbDxwHNvFdYxx8ThBPjllqM6J7/mXVUO0KBcxjfz7nt/0rQHjp9vgm0sJXFmgvhV5zIFzGdxql
+0tZkAGtCuRS/93TwWsXoRdke35HBhsuqBuAp1utp3i2eA4DWylIK5q3uqrPp6HJF9YtcYWvSX8N6
+7DX80MPcPQtkogGfh9qeUSoF13LHwZRifLSmKdCnivtiaeNzB+y+QXTas5fyOxBxWb2m9RvhViEg
+Y9xIiDy9vtfRTfDehMMOkC3ghR7SPEkDkZLwAIpY5xAX6/mqw6ZW9RW79GPScUgTqciuRnlo9qSf
+LDUTjiwYMedBiEf87B0+iqJCpXBEqr3a36WmidWsU4jfWqh99mKqgQ==
+`pragma protect end_protected
+
+`pragma protect begin_protected
+`pragma protect version="1.0"
+`pragma protect author="default"
+`pragma protect author_info="default"
+`pragma protect encrypt_agent="GOWIN"
+`pragma protect encrypt_agent_info="GOWIN Encrypt Version 1.0"
+
+`pragma protect encoding=(enctype="base64", line_length=76, bytes=256)
+`pragma protect key_keyowner="GOWIN",key_keyname="GWK2022-11",key_method="rsa"
+`pragma protect key_block
+c3Tkl6TzkXio9YQYpeF7I342O4Zl3B9TaJoLOiVRjRKMWZxw9kmC2yh/EObA7WVw5+bTiy9oyytg
+RmwtR6sebzTuloQ+9f1FsAaaBimO8UL/KGcExOtFRe4wDt0T3hCLComAjQDgNVTqSkEM+pAjwte6
+IevnekJsgdZ8arL4heI5k6+Oca2rrJJ1+lnpbVj/OyWehU1Ttob1T6JKzvDg6qGK3Pue2RkNlfSF
+CEFbtILw6bNir91jvGZv0AZKDqrC/h4spIassUhV2VbU1Yy82ft1ggE0y+11LqALn1yk83E8UDAB
+xAJT0e08XjdYniGA3mocYyfkvSa9WRJtZAtxig==
+
+`pragma protect encoding=(enctype="base64", line_length=76, bytes=768)
+`pragma protect data_keyowner="default-ip-vendor"
+`pragma protect data_keyname="default-ip-key"
+`pragma protect data_method="aes128-cbc"
+`pragma protect data_block
+CMCfiOm9r2i9vbbgywvURhLZxk+zAefb/Hv4qhfFqu4F6hsVicHa7WhmAumBuiTDgFMkn5ss/dt9
+P2nQry0ImdRkbHP/9ruCwFGJ9itNkELioZU3c2yp5Kwqhp3ppGoWmkqjdqw1LWxCNiVA5OQOSGWc
+kbjT9b7oYgtX6q6SV2Hr4HhnLyVvkj3x+AZm9HsUFV6RcyGiUU2FlYWg2Y+7mTctmRa3ftVP3XW2
+BwtI+y0rQlXl8GFdkIjBu14jgFhPNnoZfNW4P18jTO9DyjCk+zRN0VY6Uc6e49kf6iXtAlx1L1JQ
+A8zpEX5zyGemaFIFIYFsudPAHWVLMMHEiIXAacBjgnjLLyK8nCKXb8RfYRwdU8kZZgRk+eOmg5/n
+lrn50lCI1OyT18jp2JlGrTb/rMKHqmvtiVH/IrJlPkK7ti3KbEWi5mMsJFlZn4MmCCkc0FKVpxKb
+TdhCDM7LH30Ghfq8QH9JyIgQjJeqYQbWP4MBLjXay32Li/lZeFbsdUdzGApTfJeDl2biIN/rXwCm
+jaefWVBmq98CKAe2Eg22MsaDb8lkFIDrQQ26PkJ364Kk7rLRua0z50HWpKByP2nMHPx0XGoVd2gE
+ZQ2AEWmVa7hU+hbzKOmSWfFyk9MhvFmDoQJ72vc1rB8/t6aznmjxQ7zbzq+72BFAlnKuA+AYCTVs
+QkVSDlyzM4ocpO+ESIN3YnAa2o1Mg2tAmcHP9Fc5gdDjfFDayATUtawShH9l5pe9iCLVp8Tvz5M9
+YSbfu/nsC4/zB7SsVLQrPV6zhbLR4UT+PpLrznIZcXMehNcuM11SJGxCegxUkB6yK/a6tIBu1RYO
+CkXdYxTqsHlaQTcXN/yXgptenKtwOZmsz99yMqtsn3KhXdsFrVGEYSENJTlsClkLuuX7MpIGpbly
+FqjCuethb8oigkb6Jmlge0DHrsWEYfy6ZfuaWa4nVXgifml7Q7AFsA0D72Lhs1cTBO6+eUqOIGVy
+5x6ROoeLoR6oj66BpoU53a+fJpxRGXMK7HTx
+`pragma protect end_protected

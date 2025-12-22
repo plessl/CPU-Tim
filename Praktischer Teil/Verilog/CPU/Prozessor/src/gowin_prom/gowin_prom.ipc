@@ -1,0 +1,14 @@
+[General]
+file=gowin_prom
+ipc_version=4
+module=Gowin_pROM
+target_device=gw5a25b-003
+type=ram_prom
+version=1.0
+
+[Config]
+DEPTH=32
+LANG=0
+READ=0
+RESET_MODE=true
+WIDTH=32

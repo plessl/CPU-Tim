@@ -1,0 +1,9 @@
+# Read the Verilog file
+read_verilog -sv cpu.v
+
+# Synthesize the design
+hierarchy -check -top topmodule
+proc; opt; memory; opt
+
+# Generate the schematic
+show -prefix cpu_schematic -format svg topmodule
