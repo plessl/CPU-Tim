@@ -63,15 +63,17 @@ endmodule
 
 module ram_module(
     input wire clk,
-    input wire[3:0] we,
+    input wire we,
     input wire ce,
     input wire rst,
     input wire[31:0] addr,
     input wire[31:0] data_in,
     output wire[31:0] data_out
 );
-
+/*
 reg [7:0] ram_mem [16383:0];
+*/
+reg [31:0] ram_mem [4095:0];
 
 assign data_out = (ce & !we) ? ram_mem[addr >> 2] : 32'b0;
 
@@ -95,7 +97,7 @@ reg [31:0] rom_mem [1023:0];
 
 
 initial begin
-    $readmemh("rom.mi", rom_mem);
+    $readmemh("rom.mi", rom_mem, 0, 2);
 end
 
 
@@ -160,6 +162,7 @@ module fsm(
         if(rst)begin
             state <= FETCH;
             pc <= 0;
+            instr_addr <= 0;
             dmem_read <= 0;
             dmem_write <= 0;
             dmem_ce <= 0;

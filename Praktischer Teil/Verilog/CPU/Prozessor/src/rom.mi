@@ -1,6 +1,3 @@
-#File_format=AddrHex
-#Address_depth=4096
-#Data_width=4
-0:9
-1:7
-2:9
+00500093
+00a00113
+002081b3
