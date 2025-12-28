@@ -75,14 +75,15 @@ module ram_module(
 
 reg [31:0] ram_mem [4095:0];
 
-assign data_out = ram_mem[addr >> 2];
-
 always @(posedge clk) begin
 	if(ce) begin
 		if (we[0]) ram_mem[addr >> 2][7:0] <= data_in[7:0];
         if (we[1]) ram_mem[addr >> 2][15:8] <= data_in[15:8];
         if (we[2]) ram_mem[addr >> 2][23:16] <= data_in[23:16];
         if (we[3]) ram_mem[addr >> 2][31:24] <= data_in[31:24];
+	end
+	if(re) begin
+		data_out <= ram_mem[addr >> 2];
 	end
 end
 
@@ -126,13 +127,13 @@ module fsm(
 	input wire clk,
 	input wire rst,
 	
-	// instruction memory
+	// instruction MEMORY1
 	output reg imem_ce,    
 	output reg[31:0] instr_addr,
 	input wire[31:0] instr,
 	output reg [31:0] pc,
 	
-	// data memory
+	// data MEMORY1
 	output reg[31:0] dmem_addr,
 	input wire[31:0] dmem_rdata,
 	output reg dmem_ce,
@@ -145,8 +146,9 @@ module fsm(
 		FETCH = 0,
 		DECODE = 1,
 		EXECUTE = 2,
-		MEMORY = 3,
-		WRITEBACK = 4
+		MEMORY1 = 3,
+		MEMORY2 = 4,
+		WRITEBACK = 5
 	} statetype;
 
 	reg [31:0] pc_next;
@@ -304,32 +306,11 @@ module fsm(
 									tmp_rd <= 32'b0;
 							endcase
 						end
-						7'b0000011: begin
+						7'b0000011: begin	// Load
 							dmem_ce <= 1;
-							case (funct3)
-								3'b000: begin
-									tmp_mem_addr <= regfile[rs1] + imm;    //lb
-									dmem_addr <= regfile[rs1] + imm;
-								end
-								3'b001: begin
-									tmp_mem_addr <= regfile[rs1] + imm;    //lh
-									dmem_addr <= regfile[rs1] + imm;
-								end
-								3'b010: begin
-									tmp_mem_addr <= regfile[rs1] + imm;    //lw
-									dmem_addr <= regfile[rs1] + imm;
-								end
-								3'b100: begin
-									tmp_mem_addr <= (regfile[rs1] + imm);    //lbu
-									dmem_addr <= regfile[rs1] + imm;
-								end
-								3'b101: begin
-									tmp_mem_addr <= (regfile[rs1] + imm);    //lhu
-									dmem_addr <= regfile[rs1] + imm;
-								end
-								default:
-									tmp_rd <= 32'b0;
-							endcase
+							dmem_read <= 1;
+							tmp_mem_addr <= regfile[rs1] + imm;
+							dmem_addr <= regfile[rs1] + imm;
 						end
 						7'b0100011: begin   //S type
 							dmem_ce <= 1;
@@ -377,67 +358,13 @@ module fsm(
 						default:
 							$display("illegal instruction");
 					endcase
-					state <= MEMORY;
+					state <= MEMORY1;
 				end
-				MEMORY: begin
+				MEMORY1: begin
+					state <= MEMORY2;
 					case (opcode)
 					7'b0000011: begin
-						dmem_read <= 1;
-						dmem_ce <= 1; 
-						case (funct3)
-							3'b000: begin     //lb
-								case (tmp_mem_addr[1:0])
-									2'b00:
-										tmp_rd <= {{24{dmem_rdata[7]}}, dmem_rdata[7:0]};
-									2'b01:
-										tmp_rd <= {{24{dmem_rdata[15]}}, dmem_rdata[15:8]};
-									2'b10:
-										tmp_rd <= {{24{dmem_rdata[23]}}, dmem_rdata[23:16]};
-									2'b11:
-										tmp_rd <= {{24{dmem_rdata[31]}}, dmem_rdata[31:24]};
-									default:
-										tmp_rd <= 32'b0;
-								endcase
-							end
-							3'b001: begin     //lh
-								case (tmp_mem_addr[1:0])
-									2'b00:
-										tmp_rd <= {{16{dmem_rdata[15]}}, dmem_rdata[15:0]};
-									2'b10:
-										tmp_rd <= {{16{dmem_rdata[31]}}, dmem_rdata[31:16]};
-									default:
-										tmp_rd <= 32'b0;
-								endcase
-							end
-							3'b010:       //lw
-								tmp_rd <= dmem_rdata;
-							3'b100: begin     //lbu
-								case (tmp_mem_addr[1:0])
-									2'b00:
-										tmp_rd <= {24'b0, dmem_rdata[7:0]};
-									2'b01:
-										tmp_rd <= {24'b0, dmem_rdata[15:8]};
-									2'b10:
-										tmp_rd <= {24'b0, dmem_rdata[23:16]};
-									2'b11:
-										tmp_rd <= {24'b0, dmem_rdata[31:24]};
-									default:
-										tmp_rd <= 32'b0;
-								endcase
-							end
-							3'b101: begin
-								case (tmp_mem_addr[1:0])
-									2'b00:
-										tmp_rd <= {16'b0, dmem_rdata[15:0]};
-									2'b10:
-										tmp_rd <= {16'b0, dmem_rdata[31:16]};
-									default:
-										tmp_rd <= 32'b0;
-								endcase
-							end
-							default:
-								tmp_rd <= 32'b0;
-						endcase
+						state <= MEMORY2;
 					end
 					7'b0100011: begin
 						dmem_read <= 0;
@@ -492,12 +419,74 @@ module fsm(
 					default:
 						$display("undefined");
 					endcase
-						state <= WRITEBACK;
+				end
+				MEMORY2: begin
+					state <= WRITEBACK;
+					case(opcode) 
+						7'b0000011: begin
+						case (funct3)
+							3'b000: begin     //lb
+								case (tmp_mem_addr[1:0])
+									2'b00:
+										tmp_rd <= {{24{dmem_rdata[7]}}, dmem_rdata[7:0]};
+									2'b01:
+										tmp_rd <= {{24{dmem_rdata[15]}}, dmem_rdata[15:8]};
+									2'b10:
+										tmp_rd <= {{24{dmem_rdata[23]}}, dmem_rdata[23:16]};
+									2'b11:
+										tmp_rd <= {{24{dmem_rdata[31]}}, dmem_rdata[31:24]};
+									default:
+										tmp_rd <= 32'b0;
+								endcase
+							end
+							3'b001: begin     //lh
+								case (tmp_mem_addr[1:0])
+									2'b00:
+										tmp_rd <= {{16{dmem_rdata[15]}}, dmem_rdata[15:0]};
+									2'b10:
+										tmp_rd <= {{16{dmem_rdata[31]}}, dmem_rdata[31:16]};
+									default:
+										tmp_rd <= 32'b0;
+								endcase
+							end
+							3'b010:       //lw
+								tmp_rd <= dmem_rdata;
+							3'b100: begin     //lbu
+								case (tmp_mem_addr[1:0])
+									2'b00:
+										tmp_rd <= {24'b0, dmem_rdata[7:0]};
+									2'b01:
+										tmp_rd <= {24'b0, dmem_rdata[15:8]};
+									2'b10:
+										tmp_rd <= {24'b0, dmem_rdata[23:16]};
+									2'b11:
+										tmp_rd <= {24'b0, dmem_rdata[31:24]};
+									default:
+										tmp_rd <= 32'b0;
+								endcase
+							end
+							3'b101: begin	//lhu
+								case (tmp_mem_addr[1:0])
+									2'b00:
+										tmp_rd <= {16'b0, dmem_rdata[15:0]};
+									2'b10:
+										tmp_rd <= {16'b0, dmem_rdata[31:16]};
+									default:
+										tmp_rd <= 32'b0;
+								endcase
+							end
+							default:
+								tmp_rd <= 32'b0;
+						endcase
+					end
+					endcase
 				end
 				WRITEBACK: begin
 					dmem_ce <= 0;
 					dmem_write <= 4'b0000;
 					dmem_read <= 0;
+					dmem_wdata <= 0;
+					dmem_addr <= 0;
 					pc <= pc_next;
 					if(rd != 0) regfile[rd] <= tmp_rd;
 					state <= FETCH;
