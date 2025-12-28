@@ -171,7 +171,7 @@ module fsm(
 	wire [31:0] x3 = regfile[3];
 	wire [31:0] x4 = regfile[4];
 	wire [31:0] x5 = regfile[5];
-	
+
 //	reg [31:0] ir; // instruction register
 
 //	wire [31:0] opcode_wire = ir[6:0];
