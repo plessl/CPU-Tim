@@ -20,6 +20,7 @@ ram_module dmem (
 		.clk(clk),
 		.we(dmem_write),
 		.ce(dmem_ce),
+		.re(dmem_read),
 		.rst(rst),
 		.addr(dmem_addr),
 		.data_in(dmem_wdata),
@@ -63,6 +64,7 @@ endmodule
 
 module ram_module(
 	input wire clk,
+	input wire re,
 	input wire[3:0] we,
 	input wire ce,
 	input wire rst,
@@ -71,16 +73,14 @@ module ram_module(
 	output reg[31:0] data_out
 );
 
-reg [7:0] ram_mem [16383:0];
-/*
 reg [31:0] ram_mem [4095:0];
-*/
-assign data_out = (ce & !we) ? ram_mem[addr >> 2] : 32'b0;
+
+assign data_out = ram_mem[addr >> 2];
 
 always @(posedge clk) begin
 	if(ce) begin
-		if (we[0]) ram_mem[addr >> 2][7:0]   <= data_in[7:0];
-        if (we[1]) ram_mem[addr >> 2][15:8]  <= data_in[15:8];
+		if (we[0]) ram_mem[addr >> 2][7:0] <= data_in[7:0];
+        if (we[1]) ram_mem[addr >> 2][15:8] <= data_in[15:8];
         if (we[2]) ram_mem[addr >> 2][23:16] <= data_in[23:16];
         if (we[3]) ram_mem[addr >> 2][31:24] <= data_in[31:24];
 	end
@@ -103,7 +103,7 @@ reg [31:0] rom_mem [4095:0];
 
 
 initial begin
-	$readmemh("rom.mi", rom_mem, 0, 2);
+	$readmemh("rom.mi", rom_mem, 0, 5);
 end
 
 assign dout = ce ? rom_mem[addr >> 2] : 32'b0;
@@ -165,6 +165,13 @@ module fsm(
 	integer i;
 	integer d;
 
+	wire [31:0] x0 = regfile[0];
+	wire [31:0] x1 = regfile[1];
+	wire [31:0] x2 = regfile[2];
+	wire [31:0] x3 = regfile[3];
+	wire [31:0] x4 = regfile[4];
+	wire [31:0] x5 = regfile[5];
+	
 //	reg [31:0] ir; // instruction register
 
 //	wire [31:0] opcode_wire = ir[6:0];
@@ -302,23 +309,23 @@ module fsm(
 							case (funct3)
 								3'b000: begin
 									tmp_mem_addr <= regfile[rs1] + imm;    //lb
-									dmem_addr <= (regfile[rs1] + imm) >> 2;
+									dmem_addr <= regfile[rs1] + imm;
 								end
 								3'b001: begin
-									tmp_mem_addr <= (regfile[rs1] + imm);    //lh
-									dmem_addr <= (regfile[rs1] + imm) >> 2;
+									tmp_mem_addr <= regfile[rs1] + imm;    //lh
+									dmem_addr <= regfile[rs1] + imm;
 								end
 								3'b010: begin
-									tmp_mem_addr <= (regfile[rs1] + imm);    //lw
-									dmem_addr <= (regfile[rs1] + imm) >> 2;
+									tmp_mem_addr <= regfile[rs1] + imm;    //lw
+									dmem_addr <= regfile[rs1] + imm;
 								end
 								3'b100: begin
 									tmp_mem_addr <= (regfile[rs1] + imm);    //lbu
-									dmem_addr <= (regfile[rs1] + imm) >> 2;
+									dmem_addr <= regfile[rs1] + imm;
 								end
 								3'b101: begin
 									tmp_mem_addr <= (regfile[rs1] + imm);    //lhu
-									dmem_addr <= (regfile[rs1] + imm) >> 2;
+									dmem_addr <= regfile[rs1] + imm;
 								end
 								default:
 									tmp_rd <= 32'b0;
@@ -326,8 +333,8 @@ module fsm(
 						end
 						7'b0100011: begin   //S type
 							dmem_ce <= 1;
-							tmp_mem_addr <= (regfile[rs1] + imm);
-							dmem_addr <= (regfile[rs1] + imm) >> 2;
+							tmp_mem_addr <= regfile[rs1] + imm;
+							dmem_addr <= regfile[rs1] + imm;
 							tmp_memw_data <= regfile[rs2];
 						end
 
@@ -376,6 +383,7 @@ module fsm(
 					case (opcode)
 					7'b0000011: begin
 						dmem_read <= 1;
+						dmem_ce <= 1; 
 						case (funct3)
 							3'b000: begin     //lb
 								case (tmp_mem_addr[1:0])
@@ -528,9 +536,9 @@ task show_instruction;
 				7'b0100011:     //S type
 					imm = {{20{instr[31]}}, instr[31:25], instr[11:7]};
 				7'b1100011:     //B type
-					imm = {{20{instr[31]}}, instr[7], instr[30:25], instr[11:8], 1'b0};
+					imm = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0};
 				7'b1101111:     //J type jal
-					imm = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
+					imm = {{11{instr[31]}}, instr[31], instr[19:12], instr[20], instr[30:21], 1'b0};
 				7'b1100111:     // I type jalr
 					imm = {{20{instr[31]}}, instr[31:20]};
 				7'b0110111:     //U type lui
