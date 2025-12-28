@@ -63,26 +63,34 @@ endmodule
 
 module ram_module(
 	input wire clk,
-	input wire we,
+	input wire[3:0] we,
 	input wire ce,
 	input wire rst,
 	input wire[31:0] addr,
 	input wire[31:0] data_in,
 	output wire[31:0] data_out
 );
-/*
-reg [7:0] ram_mem [16383:0];
-*/
-reg [31:0] ram_mem [4095:0];
 
+reg [7:0] ram_mem [16383:0];
+/*
+reg [31:0] ram_mem [4095:0];
+*/
 assign data_out = (ce & !we) ? ram_mem[addr >> 2] : 32'b0;
 
 always @(posedge clk) begin
-	if(ce & we)
-		ram_mem[addr >> 2] <= data_in;
+	if(ce) begin
+		if (we[0]) mem[addr >> 2][7:0]   <= data_in[7:0];
+        if (we[1]) mem[addr >> 2][15:8]  <= data_in[15:8];
+        if (we[2]) mem[addr >> 2][23:16] <= data_in[23:16];
+        if (we[3]) mem[addr >> 2][31:24] <= data_in[31:24];
+		
+		dout <= ram_mem[addr >> 2];
+	end
 end
 
 endmodule
+
+
 
 module rom_module(
 	input wire clk,
@@ -93,15 +101,14 @@ module rom_module(
 	output wire[31:0] dout
 );
 
-reg [31:0] rom_mem [1023:0];
+reg [31:0] rom_mem [4095:0];
 
 
 initial begin
-	$readmemh("rom.mi", rom_mem);
+	$readmemh("rom.mi", rom_mem, 0, 2);
 end
 
-
-assign dout = rom_mem[addr >> 2];
+assign dout = ce ? rom_mem[addr >> 2] : 32'b0;
 
 /*always @(posedge clk) begin
 	if(rst)begin
@@ -160,6 +167,10 @@ module fsm(
 	integer i;
 	integer d;
 
+//	reg [31:0] ir; // instruction register
+
+//	wire [31:0] opcode_wire = ir[6:0];
+	
 	always @(posedge clk or posedge rst) begin
 		if(rst)begin
 			state <= FETCH;
@@ -178,6 +189,7 @@ module fsm(
 		else begin
 			case (state)
 				FETCH: begin
+					//ir <= instr;
 					imem_ce <= 1;
 					instr_addr <= pc;
 					pc_next <= pc + 4;
@@ -191,7 +203,7 @@ module fsm(
 					rs2 <= instr[24:20];
 					funct7 <= instr[31:25];
 
-					case (opcode)
+					case (instr[6:0])
 						7'b0010011:     //I type arithmetic
 							imm <= {{20{instr[31]}}, instr[31:20]};
 						7'b0000011:     //I type load
@@ -316,7 +328,6 @@ module fsm(
 						end
 						7'b0100011: begin   //S type
 							dmem_ce <= 1;
-							dmem_write <= 1;
 							tmp_mem_addr <= (regfile[rs1] + imm);
 							dmem_addr <= (regfile[rs1] + imm) >> 2;
 							tmp_memw_data <= regfile[rs2];
@@ -430,22 +441,41 @@ module fsm(
 						case (funct3)
 							3'b000: begin      //sb
 								case (tmp_mem_addr[1:0])
-									2'b00: dmem_wdata <= {24'b0, tmp_memw_data[7:0]};
-									2'b01: dmem_wdata <= {16'b0, tmp_memw_data[7:0], 8'b0};
-									2'b10: dmem_wdata <= {8'b0, tmp_memw_data[7:0], 16'b0};
-									2'b11: dmem_wdata <= {tmp_memw_data[7:0], 24'b0};
+									2'b00: begin
+										dmem_write <= 4'b0001;
+										dmem_wdata <= {24'b0, tmp_memw_data[7:0]};
+									end
+									2'b01: begin
+										dmem_write <= 4'b0010;
+										dmem_wdata <= {16'b0, tmp_memw_data[7:0], 8'b0};
+									end
+									2'b10: begin
+										dmem_write <= 4'b0100;
+										dmem_wdata <= {8'b0, tmp_memw_data[7:0], 16'b0};
+									end
+									2'b11: begin
+										dmem_write <= 4'b1000;
+										dmem_wdata <= {tmp_memw_data[7:0], 24'b0};
+									end
 									default: dmem_wdata <= 0;
 								endcase
 							end
 							3'b001:  begin   //sh
 								case (tmp_mem_addr[1:0])
-									2'b00: dmem_wdata <= {16'b0, tmp_memw_data[15:0]};
-									2'b10: dmem_wdata <= {tmp_memw_data[15:0], 16'b0};
+									2'b00: begin
+										dmem_write <= 4'b0011;
+										dmem_wdata <= {16'b0, tmp_memw_data[15:0]};
+									end
+									2'b10: begin
+										dmem_write <= 4'b1100;
+										dmem_wdata <= {tmp_memw_data[15:0], 16'b0};
+									end
 									default: dmem_wdata <= 0;
 								endcase
 							end
-							3'b010: begin
+							3'b010: begin	//sw
 								if (tmp_mem_addr[1:0] == 2'b00)
+									dmem_write <= 4'b1111;
 									dmem_wdata <= tmp_memw_data;
 								else
 									dmem_wdata <= 32'b0;
