@@ -1,8 +1,12 @@
 {
- "Device" : "GW5A-25B",
+ "Device" : "GW5A-25A",
  "Files" : [
   {
    "Path" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/gowin_clkdiv/gowin_clkdiv.v",
    "Type" : "verilog"
   }
  ],

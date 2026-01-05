@@ -9,27 +9,35 @@
   "SubInsts" : [
    {
     "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "InstLine" : 19,
+    "InstLine" : 22,
     "InstName" : "dmem",
     "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "ModuleLine" : 65,
+    "ModuleLine" : 76,
     "ModuleName" : "ram_module"
    },
    {
     "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "InstLine" : 30,
+    "InstLine" : 33,
     "InstName" : "imem",
     "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "ModuleLine" : 94,
+    "ModuleLine" : 105,
     "ModuleName" : "rom_module"
    },
    {
     "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "InstLine" : 39,
+    "InstLine" : 42,
     "InstName" : "machine",
     "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "ModuleLine" : 125,
+    "ModuleLine" : 136,
     "ModuleName" : "fsm"
+   },
+   {
+    "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
+    "InstLine" : 66,
+    "InstName" : "i_clkdiv",
+    "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/gowin_clkdiv/gowin_clkdiv.v",
+    "ModuleLine" : 10,
+    "ModuleName" : "Gowin_CLKDIV"
    }
   ]
  }

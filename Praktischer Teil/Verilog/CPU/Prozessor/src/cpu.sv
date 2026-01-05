@@ -1,9 +1,12 @@
 module topmodule (
-	input wire clk,
+	input wire clk_in,
 	input wire rst,
-	output reg[3:0] pc_trace 
+	output reg[6:0] pc_trace,
+    output reg clk_trace
 );
 
+wire clk;
+wire clk_div;
 wire [31:0] instr_connect;
 wire [31:0] dmem_rdata_connect;
 wire imem_ce;
@@ -56,8 +59,16 @@ fsm machine(
 	);
 
 always @(posedge clk) begin
-	pc_trace <= pc[3:0];
+	pc_trace <= pc[6:0];
+    clk_trace <= ~clk_trace;
 end
+
+Gowin_CLKDIV i_clkdiv(
+        .clkout(clk), //output clkout
+        .hclkin(clk_in), //input hclkin
+        .resetn(~rst) //input resetn
+);
+
 
 endmodule
 
@@ -104,7 +115,7 @@ reg [31:0] rom_mem [4095:0];
 
 
 initial begin
-	$readmemh("rom.mi", rom_mem, 0, 25);
+	$readmemh("rom.mi", rom_mem, 0, 4);
 end
 
 assign dout = ce ? rom_mem[addr >> 2] : 32'b0;
@@ -127,13 +138,13 @@ module fsm(
 	input wire clk,
 	input wire rst,
 	
-	// instruction MEMORY1
+	// instruction MEMORY
 	output reg imem_ce,    
 	output reg[31:0] instr_addr,
 	input wire[31:0] instr,
 	output reg [31:0] pc,
 	
-	// data MEMORY1
+	// data MEMORY
 	output reg[31:0] dmem_addr,
 	input wire[31:0] dmem_rdata,
 	output reg dmem_ce,
@@ -164,7 +175,8 @@ module fsm(
 	reg [31:0] tmp_mem_addr;
 	reg [4:0] shift_amt;
 	reg [31:0] tmp_memw_data;
-	integer i;
+	
+    integer i;
 	integer d;
 
 	wire [31:0] x0 = regfile[0];
@@ -204,7 +216,7 @@ module fsm(
 
 //	wire [31:0] opcode_wire = ir[6:0];
 	
-	always @(posedge clk or posedge rst) begin
+	always @(posedge clk) begin
 		if(rst)begin
 			state <= FETCH;
 			pc <= 0;
@@ -516,7 +528,9 @@ module fsm(
 					pc <= pc_next;
 					if(rd != 0) regfile[rd] <= tmp_rd;
 					state <= FETCH;
-					show_instruction(instr);
+					`ifndef SYNTHESIS
+                    show_instruction(instr);
+                    `endif
 					/*for (d = 0; d < 32; d = d + 1)
 						$display("register: %d, value: %d", d, regfile[d]);
 					*/
@@ -526,7 +540,8 @@ module fsm(
 			endcase
 		end
 	end
-	
+
+`ifndef SYNTHESIS
 task show_instruction;
 		input [31:0] instr;
 		reg [6:0] opcode;
@@ -615,7 +630,7 @@ task show_instruction;
 							$display("andi x%d, x%d, %d", rd, rs1, imm);
 						3'b001: begin
 							case (imm[11:5])
-								7'b0000000:
+								7'b000:
 									$display("slli x%d, x%d, %d", rd, rs1, imm);
 								default: $display("xori x%d, x%d, %d", rd, rs1, imm);
 							endcase
@@ -692,4 +707,5 @@ task show_instruction;
 			endcase
 		end
 	endtask
+`endif
 endmodule

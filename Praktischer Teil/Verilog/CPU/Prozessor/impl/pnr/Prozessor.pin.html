@@ -58,7 +58,7 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 </tr>
 <tr>
 <td class="label">Timing Constraints File</td>
-<td>---</td>
+<td>/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/Prozessor.sdc</td>
 </tr>
 <tr>
 <td class="label">Tool Version</td>
@@ -74,11 +74,11 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 </tr>
 <tr>
 <td class="label">Device Version</td>
-<td>B</td>
+<td>A</td>
 </tr>
 <tr>
 <td class="label">Created Time</td>
-<td>Mon Dec 29 19:01:51 2025
+<td>Fri Jan  2 17:37:33 2026
 </td>
 </tr>
 <tr>
@@ -111,7 +111,7 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 <td><b>Ctle</b></td>
 </tr>
 <tr>
-<td class="label">clk</td>
+<td class="label">clk_in</td>
 <td>-</td>
 <td>E2/5</td>
 <td>Y</td>
@@ -223,6 +223,90 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 <td>out</td>
 <td>IOT31[A]</td>
 <td>-</td>
+<td>LVCMOS33</td>
+<td>8</td>
+<td>NONE</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>3.3</td>
+<td>MEDIUM</td>
+<td>NONE</td>
+</tr>
+<tr>
+<td class="label">pc_trace[4]</td>
+<td>-</td>
+<td>L10/7</td>
+<td>Y</td>
+<td>out</td>
+<td>IOT15[A]</td>
+<td>-</td>
+<td>LVCMOS33</td>
+<td>8</td>
+<td>NONE</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>3.3</td>
+<td>MEDIUM</td>
+<td>NONE</td>
+</tr>
+<tr>
+<td class="label">pc_trace[5]</td>
+<td>-</td>
+<td>L7/7</td>
+<td>Y</td>
+<td>out</td>
+<td>IOT19[A]</td>
+<td>-</td>
+<td>LVCMOS33</td>
+<td>8</td>
+<td>NONE</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>3.3</td>
+<td>MEDIUM</td>
+<td>NONE</td>
+</tr>
+<tr>
+<td class="label">pc_trace[6]</td>
+<td>-</td>
+<td>K7/7</td>
+<td>Y</td>
+<td>out</td>
+<td>IOT21[A]</td>
+<td>-</td>
+<td>LVCMOS33</td>
+<td>8</td>
+<td>NONE</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>3.3</td>
+<td>MEDIUM</td>
+<td>NONE</td>
+</tr>
+<tr>
+<td class="label">clk_trace</td>
+<td>-</td>
+<td>H1/3</td>
+<td>Y</td>
+<td>out</td>
+<td>IOB91[A]</td>
+<td>GCLKT_6A</td>
 <td>LVCMOS33</td>
 <td>8</td>
 <td>NONE</td>
@@ -413,15 +497,15 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 </tr>
 <tr>
 <td class="label">L10/7</td>
-<td>-</td>
-<td>in</td>
+<td>pc_trace[4]</td>
+<td>out</td>
 <td>IOT15[A]</td>
 <td>-</td>
 <td>LVCMOS33</td>
 <td>8</td>
-<td>UP</td>
+<td>NONE</td>
 <td>OFF</td>
-<td>ON</td>
+<td>OFF</td>
 <td>OFF</td>
 <td>OFF</td>
 <td>OFF</td>
@@ -451,15 +535,15 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 </tr>
 <tr>
 <td class="label">L7/7</td>
-<td>-</td>
-<td>in</td>
+<td>pc_trace[5]</td>
+<td>out</td>
 <td>IOT19[A]</td>
 <td>-</td>
 <td>LVCMOS33</td>
 <td>8</td>
-<td>UP</td>
+<td>NONE</td>
 <td>OFF</td>
-<td>ON</td>
+<td>OFF</td>
 <td>OFF</td>
 <td>OFF</td>
 <td>OFF</td>
@@ -489,15 +573,15 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 </tr>
 <tr>
 <td class="label">K7/7</td>
-<td>-</td>
-<td>in</td>
+<td>pc_trace[6]</td>
+<td>out</td>
 <td>IOT21[A]</td>
 <td>-</td>
 <td>LVCMOS33</td>
 <td>8</td>
-<td>UP</td>
+<td>NONE</td>
 <td>OFF</td>
-<td>ON</td>
+<td>OFF</td>
 <td>OFF</td>
 <td>OFF</td>
 <td>OFF</td>
@@ -983,7 +1067,7 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 </tr>
 <tr>
 <td class="label">E2/5</td>
-<td>clk</td>
+<td>clk_in</td>
 <td>in</td>
 <td>IOB12[A]</td>
 <td>GCLKT_10B/D07/SSPI_WPN/SSI2</td>
@@ -1363,15 +1447,15 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 </tr>
 <tr>
 <td class="label">H1/3</td>
-<td>-</td>
-<td>in</td>
+<td>clk_trace</td>
+<td>out</td>
 <td>IOB91[A]</td>
 <td>GCLKT_6A</td>
 <td>LVCMOS33</td>
 <td>8</td>
-<td>UP</td>
+<td>NONE</td>
 <td>OFF</td>
-<td>ON</td>
+<td>OFF</td>
 <td>OFF</td>
 <td>OFF</td>
 <td>OFF</td>

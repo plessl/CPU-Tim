@@ -2,12 +2,14 @@
 <!DOCTYPE gowin-synthesis-project>
 <Project>
     <Version>beta</Version>
-    <Device id="GW5A-25B" package="MBGA121N" speed="1" partNumber="GW5A-LV25MG121NC1/I0"/>
+    <Device id="GW5A-25A" package="MBGA121N" speed="1" partNumber="GW5A-LV25MG121NC1/I0"/>
     <FileList>
         <File path="/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv" type="verilog"/>
+        <File path="/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/gowin_clkdiv/gowin_clkdiv.v" type="verilog"/>
     </FileList>
     <OptionList>
         <Option type="disable_insert_pad" value="0"/>
+        <Option type="enable_dsrm" value="0"/>
         <Option type="global_freq" value="100.000"/>
         <Option type="looplimit" value="2000"/>
         <Option type="output_file" value="/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/impl/gwsynthesis/Prozessor.vg"/>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module name="top" T_Register="23(0)" T_Alu="6(0)" T_Lut="27(0)" T_Bsram="2(0)">
+ <SubModule name="led_inst" Register="23" Alu="6" Lut="27" T_Register="23(23)" T_Alu="6(6)" T_Lut="27(27)"/>
+ <SubModule name="fb_inst" Bsram="2" T_Bsram="2(2)"/>
+</Module>
