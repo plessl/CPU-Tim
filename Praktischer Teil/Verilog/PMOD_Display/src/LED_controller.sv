@@ -11,6 +11,7 @@ module LED_controller (
     output logic[4:0] row_addr,
     output logic[5:0] col_addr,
     output logic oe,
+    output logic re,
     output logic latch,
     output logic display_clk
 );
@@ -30,6 +31,11 @@ logic pixel_tick_shift;
 
 assign pixel_tick = (clkdiv_counter == {COUNTER_WIDTH{1'b0}});
 assign pixel_tick_shift = (clkdiv_counter == {{1'b1, {COUNTER_WIDTH-1{1'b0}}}});
+//assign re_tick = (clkdiv_counter == {{1'b0, {COUNTER_WIDTH-1{1'b1}}}});
+assign re_tick = (clkdiv_counter == 7'b0111111);
+assign re_tick_2 = (clkdiv_counter == 7'b1000000);
+assign re_tick_3 = (clkdiv_counter == 7'b1000001);
+
 
 typedef enum reg[1:0]{
     INIT = 0,
@@ -47,9 +53,14 @@ always_ff @(posedge clk or posedge rst) begin
         row_addr <= '1;
         oe <= 0;
         latch <= 0;
+        re <= 0;
     end else begin
  
         clkdiv_counter <= clkdiv_counter + 1'b1;
+        //re <= pixel_tick_shift;
+        //re <= re_tick_2 & (display_clk == 0);
+        re <= re_tick_2; // & (display_clk == 0);
+
         if(pixel_tick) begin
 
             // Update FSM outputs
@@ -181,12 +192,15 @@ module top(
     output logic [3:0] dout_b
 );
 
+    logic re;
+
     LED_controller led_inst(
         .clk(clk),
         .rst(rst),
         .row_addr(row_addr),
         .col_addr(col_addr),
         .oe(oe),
+        .re(re),
         .latch(latch),
         .display_clk(display_clk)
     );
@@ -196,7 +210,7 @@ module top(
         .rst(rst),
         .din('0),
         .ce(1'b1),
-        .re(oe),
+        .re(re),
         .waddr('0),
         .we(1'b0),
         .raddr_a({1'b0, row_addr, col_addr}),

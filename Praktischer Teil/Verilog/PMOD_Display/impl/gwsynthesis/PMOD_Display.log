@@ -1,11 +1,14 @@
 GowinSynthesis start
 Running parser ...
 Analyzing Verilog file '/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv'
-Compiling module 'top'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":172)
+Undeclared symbol 're_tick', assumed default net type 'wire'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":35)
+Undeclared symbol 're_tick_2', assumed default net type 'wire'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":36)
+Undeclared symbol 're_tick_3', assumed default net type 'wire'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":37)
+Compiling module 'top'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":183)
 Compiling module 'LED_controller'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":8)
-Compiling module 'framebuffer'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":132)
-Extracting RAM for identifier 'mem_a'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":146)
-Extracting RAM for identifier 'mem_b'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":147)
+Compiling module 'framebuffer'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":143)
+Extracting RAM for identifier 'mem_a'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":157)
+Extracting RAM for identifier 'mem_b'("/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv":158)
 NOTE  (EX0101) : Current top module is "top"
 [5%] Running netlist conversion ...
 Running device independent optimization ...

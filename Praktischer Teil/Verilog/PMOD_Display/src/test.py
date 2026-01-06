@@ -1,0 +1,52 @@
+
+#for y in range(63):
+#    print("0010")
+#    for i in range(63):
+#        print("0000")
+
+def red_horizontal_line():
+    for x in range(64):
+        print("0100")
+    for x in range(63*64):
+        print("0000")
+
+def red_vertical_line():
+    for x in range(64):
+        print("0100")
+        for y in range(63):
+            print("0000")
+
+def colorful_corners():
+    print("0001")
+    for x in range(62):
+        print("0000")
+    print("0100")
+    for x in range(62*64):
+        print("0000")
+    print("0010")
+    for x in range(62):
+        print("0000")
+    print("0111")
+
+def one_pixel():
+    print("0110")
+    for x in range((64*64)-1):
+        print("0000")
+
+def one_pixel_bottom():
+    for x in range(32*64):
+        print("0000")
+    print("0100")
+    for x in range((32*64)-1):
+        print("0000")
+
+def two_lines():
+    for x in range(64):
+        print("0100")
+    for x in range(64):
+        print("0010")
+    for x in range(62*64):
+        print("0000")
+
+
+one_pixel()

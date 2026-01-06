@@ -13,12 +13,12 @@ logic rst;
 logic [4:0] row_addr;
 logic [5:0] col_addr;
 logic oe;
+logic re;
 logic latch;
 logic display_clk;
 
 logic [3:0] din;
 logic ce;
-//logic re;
 logic [11:0] waddr;
 logic we;
 logic [11:0] raddr_a;
@@ -32,6 +32,7 @@ LED_controller dut(
     .row_addr(row_addr),
     .col_addr(col_addr),
     .oe(oe),
+    .re(re),
     .latch(latch),
     .display_clk(display_clk)
 );
@@ -41,7 +42,7 @@ framebuffer fbuf(
     .rst(rst),
     .din(din),
     .ce(1'b1),
-    .re(oe),
+    .re(re),
     .waddr(waddr),
     .we(we),
     .raddr_a({1'b0, row_addr, col_addr}),
@@ -67,7 +68,7 @@ initial begin
     rst <= 1;
     #50
     rst <= 0;
-    #500000
+    #50000000
     $finish;
 end
 

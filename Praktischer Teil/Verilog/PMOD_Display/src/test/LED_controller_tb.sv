@@ -6,6 +6,7 @@ reg rst;
 reg[4:0] row_addr;
 reg[5:0] col_addr;
 reg oe;
+logic re;
 reg latch;
 reg display_clk;
 
@@ -15,6 +16,7 @@ LED_controller dut(
     .row_addr(row_addr),
     .col_addr(col_addr),
     .oe(oe),
+    .re(re),
     .latch(latch),
     .display_clk(display_clk)
 );
