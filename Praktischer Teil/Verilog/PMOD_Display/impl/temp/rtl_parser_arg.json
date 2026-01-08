@@ -4,6 +4,10 @@
   {
    "Path" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv",
    "Type" : "verilog"
+  },
+  {
+   "Path" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/gowin_clkdiv/gowin_clkdiv.v",
+   "Type" : "verilog"
   }
  ],
  "IncludePath" : [
@@ -11,7 +15,7 @@
  ],
  "LoopLimit" : 2000,
  "ResultFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/impl/temp/rtl_parser.result",
- "Top" : "",
+ "Top" : "top",
  "VerilogStd" : "sysv",
  "VhdlStd" : "vhdl_93"
 }

@@ -1,9 +1,3 @@
-
-#for y in range(63):
-#    print("0010")
-#    for i in range(63):
-#        print("0000")
-
 def red_horizontal_line():
     for x in range(64):
         print("0100")
@@ -28,9 +22,11 @@ def colorful_corners():
         print("0000")
     print("0111")
 
-def one_pixel():
-    print("0110")
-    for x in range((64*64)-1):
+def one_pixel(x):
+    for x in range(x-1):
+        print("0000")
+    print("0100")
+    for x in range((64*64)-(x)):
         print("0000")
 
 def one_pixel_bottom():
@@ -42,11 +38,11 @@ def one_pixel_bottom():
 
 def two_lines():
     for x in range(64):
-        print("0100")
+        print("0001")
     for x in range(64):
-        print("0010")
+        print("0100")
     for x in range(62*64):
         print("0000")
 
 
-one_pixel()
+two_lines()
