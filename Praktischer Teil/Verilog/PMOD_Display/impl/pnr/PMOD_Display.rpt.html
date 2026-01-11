@@ -83,7 +83,7 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 </tr>
 <tr>
 <td class="label">Created Time</td>
-<td>Sun Jan 11 00:49:30 2026
+<td>Sun Jan 11 15:14:43 2026
 </td>
 </tr>
 <tr>
@@ -98,23 +98,23 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 <td class="label">Place & Route Process</td>
 <td>Running placement:
    Placement Phase 0: CPU time = 0h 0m 0.008s, Elapsed time = 0h 0m 0.008s
-   Placement Phase 1: CPU time = 0h 0m 0.082s, Elapsed time = 0h 0m 0.081s
-   Placement Phase 2: CPU time = 0h 0m 0.001s, Elapsed time = 0h 0m 0.001s
+   Placement Phase 1: CPU time = 0h 0m 0.083s, Elapsed time = 0h 0m 0.082s
+   Placement Phase 2: CPU time = 0h 0m 0.001s, Elapsed time = 0h 0m 0s
    Placement Phase 3: CPU time = 0h 0m 0.137s, Elapsed time = 0h 0m 0.135s
-   Total Placement: CPU time = 0h 0m 0.228s, Elapsed time = 0h 0m 0.225s
+   Total Placement: CPU time = 0h 0m 0.229s, Elapsed time = 0h 0m 0.225s
 Running routing:
    Routing Phase 0: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
-   Routing Phase 1: CPU time = 0h 0m 0.251s, Elapsed time = 0h 0m 0.249s
+   Routing Phase 1: CPU time = 0h 0m 0.258s, Elapsed time = 0h 0m 0.257s
    Routing Phase 2: CPU time = 0h 0m 0.008s, Elapsed time = 0h 0m 0.008s
    Routing Phase 3: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
-   Total Routing: CPU time = 0h 0m 0.259s, Elapsed time = 0h 0m 0.257s
+   Total Routing: CPU time = 0h 0m 0.266s, Elapsed time = 0h 0m 0.265s
 Generate output files:
    CPU time = 0h 0m 1s, Elapsed time = 0h 0m 1s
 </td>
 </tr>
 <tr>
 <td class="label">Total Time and Memory Usage</td>
-<td>CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s, Peak memory usage = 1007MB</td>
+<td>CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s, Peak memory usage = 1156MB</td>
 </tr>
 </table>
 <br/>
@@ -129,12 +129,12 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">Logic</td>
-<td>27/23040</td>
+<td>32/23040</td>
 <td><1%</td>
 </tr>
 <tr>
 <td class="label">&nbsp &nbsp --LUT,ALU,ROM16</td>
-<td>27(23 LUT, 4 ALU, 0 ROM16)</td>
+<td>32(28 LUT, 4 ALU, 0 ROM16)</td>
 <td>-</td>
 </tr>
 <tr>
@@ -169,7 +169,7 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">CLS</td>
-<td>22/11520</td>
+<td>21/11520</td>
 <td><1%</td>
 </tr>
 <tr>
@@ -337,11 +337,11 @@ Generate output files:
 <tr>
 <td class="label">rst</td>
 <td>-</td>
-<td>H10/7</td>
+<td>H11/7</td>
 <td>Y</td>
 <td>in</td>
-<td>IOT3[B]</td>
-<td>GCLKC_16</td>
+<td>IOT3[A]</td>
+<td>GCLKT_16</td>
 <td>LVCMOS33</td>
 <td>OFF</td>
 <td>DOWN</td>
@@ -505,6 +505,27 @@ Generate output files:
 <tr>
 <td class="label">col_addr[2]</td>
 <td>-</td>
+<td>H10/7</td>
+<td>N</td>
+<td>out</td>
+<td>IOT3[B]</td>
+<td>GCLKC_16</td>
+<td>LVCMOS33</td>
+<td>8</td>
+<td>NONE</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>OFF</td>
+<td>3.3</td>
+<td>MEDIUM</td>
+<td>NONE</td>
+</tr>
+<tr>
+<td class="label">col_addr[3]</td>
+<td>-</td>
 <td>L10/7</td>
 <td>N</td>
 <td>out</td>
@@ -524,7 +545,7 @@ Generate output files:
 <td>NONE</td>
 </tr>
 <tr>
-<td class="label">col_addr[3]</td>
+<td class="label">col_addr[4]</td>
 <td>-</td>
 <td>K10/7</td>
 <td>N</td>
@@ -545,33 +566,12 @@ Generate output files:
 <td>NONE</td>
 </tr>
 <tr>
-<td class="label">col_addr[4]</td>
+<td class="label">col_addr[5]</td>
 <td>-</td>
 <td>L7/7</td>
 <td>N</td>
 <td>out</td>
 <td>IOT19[A]</td>
-<td>-</td>
-<td>LVCMOS33</td>
-<td>8</td>
-<td>NONE</td>
-<td>OFF</td>
-<td>OFF</td>
-<td>OFF</td>
-<td>OFF</td>
-<td>OFF</td>
-<td>OFF</td>
-<td>3.3</td>
-<td>MEDIUM</td>
-<td>NONE</td>
-</tr>
-<tr>
-<td class="label">col_addr[5]</td>
-<td>-</td>
-<td>L8/7</td>
-<td>N</td>
-<td>out</td>
-<td>IOT19[B]</td>
 <td>-</td>
 <td>LVCMOS33</td>
 <td>8</td>
@@ -715,11 +715,11 @@ Generate output files:
 <tr>
 <td class="label">dout_a[3]</td>
 <td>-</td>
-<td>H11/7</td>
+<td>L8/7</td>
 <td>N</td>
 <td>out</td>
-<td>IOT3[A]</td>
-<td>GCLKT_16</td>
+<td>IOT19[B]</td>
+<td>-</td>
 <td>LVCMOS33</td>
 <td>8</td>
 <td>NONE</td>
@@ -880,15 +880,15 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">H11/7</td>
-<td>dout_a[3]</td>
-<td>out</td>
+<td>rst</td>
+<td>in</td>
 <td>IOT3[A]</td>
 <td>GCLKT_16</td>
 <td>LVCMOS33</td>
-<td>8</td>
-<td>NONE</td>
 <td>OFF</td>
+<td>DOWN</td>
 <td>OFF</td>
+<td>ON</td>
 <td>OFF</td>
 <td>OFF</td>
 <td>OFF</td>
@@ -899,15 +899,15 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">H10/7</td>
-<td>rst</td>
-<td>in</td>
+<td>col_addr[2]</td>
+<td>out</td>
 <td>IOT3[B]</td>
 <td>GCLKC_16</td>
 <td>LVCMOS33</td>
+<td>8</td>
+<td>NONE</td>
 <td>OFF</td>
-<td>DOWN</td>
 <td>OFF</td>
-<td>ON</td>
 <td>OFF</td>
 <td>OFF</td>
 <td>OFF</td>
@@ -994,7 +994,7 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">L10/7</td>
-<td>col_addr[2]</td>
+<td>col_addr[3]</td>
 <td>out</td>
 <td>IOT15[A]</td>
 <td>-</td>
@@ -1013,7 +1013,7 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">K10/7</td>
-<td>col_addr[3]</td>
+<td>col_addr[4]</td>
 <td>out</td>
 <td>IOT15[B]</td>
 <td>-</td>
@@ -1032,7 +1032,7 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">L7/7</td>
-<td>col_addr[4]</td>
+<td>col_addr[5]</td>
 <td>out</td>
 <td>IOT19[A]</td>
 <td>-</td>
@@ -1051,7 +1051,7 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">L8/7</td>
-<td>col_addr[5]</td>
+<td>dout_a[3]</td>
 <td>out</td>
 <td>IOT19[B]</td>
 <td>-</td>

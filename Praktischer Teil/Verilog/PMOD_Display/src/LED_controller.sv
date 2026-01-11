@@ -47,14 +47,14 @@ always @(posedge clk or posedge rst) begin
         oe <= 1'b1;
         re <= 1'b0;
         latch <= 1'b0;
-        
         end
         else begin
         case (con_state)
             FETCH: begin
+
                 display_clk <= 1'b0;
                 col_addr <= col_counter;
-                row_addr <= row_counter;
+                row_addr <= (ROWS - 1) - row_counter;
                 con_state <= SHIFT1;
                 re <= 1'b1;
                 oe <= 1'b0;
@@ -167,7 +167,8 @@ module top(
         .latch(latch),
         .display_clk(display_clk)
     );
-    
+
+
     /*    
     Gowin_CLKDIV your_instance_name(
         .clkout(clk), //output clkout
