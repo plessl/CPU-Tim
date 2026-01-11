@@ -12,23 +12,23 @@
   <Part Number>: GW5A-LV25MG121NC1/I0
   <Device>: GW5A-25
   <Device Version>: A
-  <Created Time>:Sun Jan 11 15:14:43 2026
+  <Created Time>:Sun Jan 11 15:44:33 2026
 
 
 2. PnR Details
 
   Running placement:
-    Placement Phase 0: CPU time = 0h 0m 0.008s, Elapsed time = 0h 0m 0.008s
-    Placement Phase 1: CPU time = 0h 0m 0.083s, Elapsed time = 0h 0m 0.082s
+    Placement Phase 0: CPU time = 0h 0m 0.011s, Elapsed time = 0h 0m 0.011s
+    Placement Phase 1: CPU time = 0h 0m 0.089s, Elapsed time = 0h 0m 0.086s
     Placement Phase 2: CPU time = 0h 0m 0.001s, Elapsed time = 0h 0m 0s
-    Placement Phase 3: CPU time = 0h 0m 0.137s, Elapsed time = 0h 0m 0.135s
-    Total Placement: CPU time = 0h 0m 0.229s, Elapsed time = 0h 0m 0.225s
+    Placement Phase 3: CPU time = 0h 0m 0.137s, Elapsed time = 0h 0m 0.134s
+    Total Placement: CPU time = 0h 0m 0.238s, Elapsed time = 0h 0m 0.231s
  Running routing:
     Routing Phase 0: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
-    Routing Phase 1: CPU time = 0h 0m 0.258s, Elapsed time = 0h 0m 0.257s
+    Routing Phase 1: CPU time = 0h 0m 0.263s, Elapsed time = 0h 0m 0.26s
     Routing Phase 2: CPU time = 0h 0m 0.008s, Elapsed time = 0h 0m 0.008s
     Routing Phase 3: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
-    Total Routing: CPU time = 0h 0m 0.266s, Elapsed time = 0h 0m 0.265s
+    Total Routing: CPU time = 0h 0m 0.271s, Elapsed time = 0h 0m 0.268s
  Generate output files:
     CPU time = 0h 0m 1s, Elapsed time = 0h 0m 1s
 
@@ -40,15 +40,15 @@
   --------------------------------------------------------------------------------
   Resources                   | Usage                               | Utilization
   --------------------------------------------------------------------------------
-  Logic                       | 32/23040                            |  <1%
-    --LUT,ALU,ROM16           | 32(28 LUT, 4 ALU, 0 ROM16)          | -
+  Logic                       | 26/23040                            |  <1%
+    --LUT,ALU,ROM16           | 26(22 LUT, 4 ALU, 0 ROM16)          | -
     --SSRAM(RAM16)            | 0                                   | -
-  Register                    | 29/23280                            |  <1%
+  Register                    | 18/23280                            |  <1%
     --Logic Register as Latch | 0/23040                             |  0%
-    --Logic Register as FF    | 27/23040                            |  <1%
+    --Logic Register as FF    | 17/23040                            |  <1%
     --I/O Register as Latch   | 0/240                               |  0%
-    --I/O Register as FF      | 2/240                               |  <1%
-  CLS                         | 21/11520                            |  <1%
+    --I/O Register as FF      | 1/240                               |  <1%
+  CLS                         | 14/11520                            |  <1%
   I/O Port                    | 24/86                               |  28%
   I/O Buf                     | 24                                  | -
     --Input Buf               | 2                                   | -
@@ -110,11 +110,11 @@ row_addr[1]  | -         | A11/6         | Y          | out   | IOL14[A] | LPLL1
 row_addr[2]  | -         | E10/6         | Y          | out   | IOL3[B]  | GCLKC_14/LPLL0_C_FB0 | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
 row_addr[3]  | -         | E11/6         | Y          | out   | IOL3[A]  | GCLKT_14/LPLL0_T_IN2 | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
 row_addr[4]  | -         | C11/6         | Y          | out   | IOL5[A]  | GCLKT_13/LPLL0_T_IN1 | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
-col_addr[0]  | -         | J11/7         | N          | out   | IOT1[A]  | GCLKT_15/LPLL0_T_IN0 | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
-col_addr[1]  | -         | J10/7         | N          | out   | IOT1[B]  | GCLKC_15        | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
-col_addr[2]  | -         | H10/7         | N          | out   | IOT3[B]  | GCLKC_16        | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
-col_addr[3]  | -         | L10/7         | N          | out   | IOT15[A] | -               | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
-col_addr[4]  | -         | K10/7         | N          | out   | IOT15[B] | -               | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
+col_addr[0]  | -         | J10/7         | N          | out   | IOT1[B]  | GCLKC_15        | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
+col_addr[1]  | -         | H10/7         | N          | out   | IOT3[B]  | GCLKC_16        | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
+col_addr[2]  | -         | L10/7         | N          | out   | IOT15[A] | -               | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
+col_addr[3]  | -         | K10/7         | N          | out   | IOT15[B] | -               | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
+col_addr[4]  | -         | J11/7         | N          | out   | IOT1[A]  | GCLKT_15/LPLL0_T_IN0 | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
 col_addr[5]  | -         | L7/7          | N          | out   | IOT19[A] | -               | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
 oe           | -         | K5/1          | Y          | out   | IOT63[B] | GCLKC_3         | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
 latch        | -         | K11/7         | Y          | out   | IOT11[A] | -               | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
@@ -137,16 +137,16 @@ dout_b[3]    | -         | D11/6         | N          | out   | IOL9[A]  | -    
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Loc./Bank| Signal       | Dir.  | Site     | CFG             | IO Type  | Drive | Pull Mode | PCI Clamp | Hysteresis | Open Drain | Vref       | Single Resistor | Diff Resistor | Bank Vccio | Pull Strength | Ctle         
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-J11/7    | col_addr[0]  | out   | IOT1[A]  | GCLKT_15/LPLL0_T_IN0 | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
-J10/7    | col_addr[1]  | out   | IOT1[B]  | GCLKC_15        | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
+J11/7    | col_addr[4]  | out   | IOT1[A]  | GCLKT_15/LPLL0_T_IN0 | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
+J10/7    | col_addr[0]  | out   | IOT1[B]  | GCLKC_15        | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 H11/7    | rst          | in    | IOT3[A]  | GCLKT_16        | LVCMOS33 | OFF   | DOWN      | OFF       | ON         | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
-H10/7    | col_addr[2]  | out   | IOT3[B]  | GCLKC_16        | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
+H10/7    | col_addr[1]  | out   | IOT3[B]  | GCLKC_16        | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 G11/7    | dout_a[1]    | out   | IOT7[A]  | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 G10/7    | dout_a[2]    | out   | IOT7[B]  | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 K11/7    | latch        | out   | IOT11[A] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 L11/7    | display_clk  | out   | IOT11[B] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
-L10/7    | col_addr[3]  | out   | IOT15[A] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
-K10/7    | col_addr[4]  | out   | IOT15[B] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
+L10/7    | col_addr[2]  | out   | IOT15[A] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
+K10/7    | col_addr[3]  | out   | IOT15[B] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 L7/7     | col_addr[5]  | out   | IOT19[A] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 L8/7     | dout_a[3]    | out   | IOT19[B] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 K7/7     | -            | in    | IOT21[A] | -               | LVCMOS33 | 8     | UP        | OFF       | ON         | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         

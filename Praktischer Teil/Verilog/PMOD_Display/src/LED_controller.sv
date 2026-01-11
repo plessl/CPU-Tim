@@ -19,28 +19,27 @@ module LED_Controller #(
     output logic latch,
     output logic display_clk
 );
-
+/*
 reg [4:0] row_counter;
 reg [5:0] col_counter;
-
-typedef enum reg [2:0]
+*/
+typedef enum reg [3:0]
 {   
-    FETCH = 3'd0,
-    SHIFT1 = 3'd1,
-    SHIFT2 = 3'd2,
-    LATCH_HIGH = 3'd3,
-    LATCH_LOW = 3'd4,
-    WAIT = 3'd5
+    FETCH = 4'd0,
+    SHIFT1 = 4'd1,
+    SHIFT2 = 4'd2,
+    LATCH_HIGH = 4'd3,
+    LATCH_LOW = 4'd4,
+    WAIT = 4'd5
     
 } controller_statetype;
 
 controller_statetype con_state;
 
-always @(posedge clk or posedge rst) begin
+always @(negedge clk or posedge rst) begin
     if(rst)begin
         con_state <= FETCH;
-        col_counter <= '0;
-        row_counter <= '0;
+        display_clk <= 1'b0;
         row_addr <= '0;
         col_addr <= '0;
         display_clk <= 1'b0;
@@ -51,10 +50,9 @@ always @(posedge clk or posedge rst) begin
         else begin
         case (con_state)
             FETCH: begin
-
                 display_clk <= 1'b0;
-                col_addr <= col_counter;
-                row_addr <= (ROWS - 1) - row_counter;
+                col_addr <= col_addr;
+                row_addr <= row_addr;
                 con_state <= SHIFT1;
                 re <= 1'b1;
                 oe <= 1'b0;
@@ -69,13 +67,13 @@ always @(posedge clk or posedge rst) begin
             SHIFT2: begin           
                 display_clk <= 1'b0;
                 re <= 1'b0;
-                if(col_counter == COLUMNS - 1) begin
+                if(col_addr == COLUMNS - 1) begin
                     con_state <= LATCH_HIGH;
                     oe <= 1'b1;
-                    col_counter <= '0;
+                    col_addr <= '0;
                 end else begin
                     con_state <= FETCH;
-                    col_counter <= col_counter + 1'b1;
+                    col_addr <= col_addr + 1'b1;
                     oe <= 1'b0;
                 end
             end
@@ -89,7 +87,7 @@ always @(posedge clk or posedge rst) begin
                 latch <= 1'b0;
                 display_clk <= 1'b0;
                 oe <= 1'b1;
-                row_counter <= row_counter + 1'b1;
+                row_addr <= row_addr + 1'b1;
                 con_state <= WAIT;
             end
             WAIT: begin
