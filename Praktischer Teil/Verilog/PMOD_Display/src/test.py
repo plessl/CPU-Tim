@@ -1,6 +1,13 @@
-def red_horizontal_line():
+import random
+
+NUM_LINES = 4096
+BITS_PER_LINE = 4
+BLOCK_SIZE = 64
+
+
+def horizontal_line(a):
     for x in range(64):
-        print("0100")
+        print(a)
     for x in range(63*64):
         print("0000")
 
@@ -44,5 +51,13 @@ def two_lines():
     for x in range(62*64):
         print("0000")
 
+def line():
+    for x in range(32):
+        print("0100")
+    for x in range(32):
+        print("0001")
+    for x in range((64*64)-64):
+        print("0000")
 
-two_lines()
+
+random_lines()

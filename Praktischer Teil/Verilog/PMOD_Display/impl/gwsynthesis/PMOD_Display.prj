@@ -5,7 +5,6 @@
     <Device id="GW5A-25A" package="MBGA121N" speed="1" partNumber="GW5A-LV25MG121NC1/I0"/>
     <FileList>
         <File path="/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv" type="verilog"/>
-        <File path="/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/gowin_clkdiv/gowin_clkdiv.v" type="verilog"/>
     </FileList>
     <OptionList>
         <Option type="disable_insert_pad" value="0"/>

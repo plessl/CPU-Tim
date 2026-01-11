@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Module name="top" Lut="1" T_Register="31(0)" T_Lut="32(1)">
- <SubModule name="led_inst" Register="29" Lut="28" T_Register="29(29)" T_Lut="28(28)"/>
- <SubModule name="your_instance_name"/>
- <SubModule name="fb_inst" Register="2" Lut="3" T_Register="2(2)" T_Lut="3(3)"/>
+<Module name="top" T_Register="29(0)" T_Alu="4(0)" T_Lut="24(0)" T_Bsram="2(0)">
+ <SubModule name="led_inst" Register="29" Alu="4" Lut="24" T_Register="29(29)" T_Alu="4(4)" T_Lut="24(24)"/>
+ <SubModule name="fb_inst" Bsram="2" T_Bsram="2(2)"/>
 </Module>

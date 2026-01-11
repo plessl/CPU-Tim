@@ -6,7 +6,6 @@
     <Device name="GW5A-25A" pn="GW5A-LV25MG121NC1/I0">gw5a25a-002</Device>
     <FileList>
         <File path="src/LED_controller.sv" type="file.verilog" enable="1"/>
-        <File path="src/gowin_clkdiv/gowin_clkdiv.v" type="file.verilog" enable="1"/>
         <File path="src/PMOD_Display.cst" type="file.cst" enable="1"/>
         <File path="src/led.mi" type="file.other" enable="1"/>
     </FileList>

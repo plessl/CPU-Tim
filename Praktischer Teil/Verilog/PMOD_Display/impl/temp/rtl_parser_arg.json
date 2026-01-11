@@ -4,10 +4,6 @@
   {
    "Path" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv",
    "Type" : "verilog"
-  },
-  {
-   "Path" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/gowin_clkdiv/gowin_clkdiv.v",
-   "Type" : "verilog"
   }
  ],
  "IncludePath" : [

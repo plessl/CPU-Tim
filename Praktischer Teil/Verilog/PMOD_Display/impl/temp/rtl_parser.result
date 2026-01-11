@@ -1,34 +1,26 @@
 [
  {
   "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv",
-  "InstLine" : 136,
+  "InstLine" : 146,
   "InstName" : "top",
   "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv",
-  "ModuleLine" : 136,
+  "ModuleLine" : 146,
   "ModuleName" : "top",
   "SubInsts" : [
    {
     "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv",
-    "InstLine" : 152,
+    "InstLine" : 160,
     "InstName" : "led_inst",
     "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv",
-    "ModuleLine" : 1,
+    "ModuleLine" : 6,
     "ModuleName" : "LED_Controller"
    },
    {
     "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv",
-    "InstLine" : 163,
-    "InstName" : "your_instance_name",
-    "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/gowin_clkdiv/gowin_clkdiv.v",
-    "ModuleLine" : 10,
-    "ModuleName" : "Gowin_CLKDIV"
-   },
-   {
-    "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv",
-    "InstLine" : 169,
+    "InstLine" : 179,
     "InstName" : "fb_inst",
     "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/PMOD_Display/src/LED_controller.sv",
-    "ModuleLine" : 95,
+    "ModuleLine" : 105,
     "ModuleName" : "framebuffer"
    }
   ]

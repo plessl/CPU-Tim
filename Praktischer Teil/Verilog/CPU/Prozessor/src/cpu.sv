@@ -2,7 +2,7 @@ module topmodule (
 	input wire clk_in,
 	input wire rst,
 	output reg[6:0] pc_trace,
-    output reg clk_trace
+	output reg clk_trace
 );
 
 wire clk;
@@ -60,13 +60,13 @@ fsm machine(
 
 always @(posedge clk) begin
 	pc_trace <= pc[6:0];
-    clk_trace <= ~clk_trace;
+	clk_trace <= ~clk_trace;
 end
 
 Gowin_CLKDIV i_clkdiv(
-        .clkout(clk), //output clkout
-        .hclkin(clk_in), //input hclkin
-        .resetn(~rst) //input resetn
+		.clkout(clk), //output clkout
+		.hclkin(clk_in), //input hclkin
+		.resetn(~rst) //input resetn
 );
 
 
@@ -89,9 +89,9 @@ reg [31:0] ram_mem [4095:0];
 always @(posedge clk) begin
 	if(ce) begin
 		if (we[0]) ram_mem[addr >> 2][7:0] <= data_in[7:0];
-        if (we[1]) ram_mem[addr >> 2][15:8] <= data_in[15:8];
-        if (we[2]) ram_mem[addr >> 2][23:16] <= data_in[23:16];
-        if (we[3]) ram_mem[addr >> 2][31:24] <= data_in[31:24];
+		if (we[1]) ram_mem[addr >> 2][15:8] <= data_in[15:8];
+		if (we[2]) ram_mem[addr >> 2][23:16] <= data_in[23:16];
+		if (we[3]) ram_mem[addr >> 2][31:24] <= data_in[31:24];
 	end
 	if(re) begin
 		data_out <= ram_mem[addr >> 2];
@@ -176,7 +176,7 @@ module fsm(
 	reg [4:0] shift_amt;
 	reg [31:0] tmp_memw_data;
 	
-    integer i;
+	integer i;
 	integer d;
 
 	wire [31:0] x0 = regfile[0];
@@ -529,8 +529,8 @@ module fsm(
 					if(rd != 0) regfile[rd] <= tmp_rd;
 					state <= FETCH;
 					`ifndef SYNTHESIS
-                    show_instruction(instr);
-                    `endif
+					show_instruction(instr);
+					`endif
 					/*for (d = 0; d < 32; d = d + 1)
 						$display("register: %d, value: %d", d, regfile[d]);
 					*/

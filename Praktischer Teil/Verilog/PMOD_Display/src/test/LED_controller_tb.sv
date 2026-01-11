@@ -1,24 +1,27 @@
 `timescale 1ns/1ps
 
 module tb_LED_controller;
-reg clk;
-reg rst;
-reg[4:0] row_addr;
-reg[5:0] col_addr;
-reg oe;
-logic re;
-reg latch;
-reg display_clk;
 
-LED_controller dut(
-    .clk(clk),
+logic clk;
+logic rst;
+logic [4:0] row_addr;
+logic [5:0] col_addr;
+logic oe;
+logic latch;
+logic display_clk;
+logic [3:0] dout_a;
+logic [3:0] dout_b;
+
+top dut(
     .rst(rst),
-    .row_addr(row_addr),
+    .clk(clk),
     .col_addr(col_addr),
+    .row_addr(row_addr),
     .oe(oe),
-    .re(re),
     .latch(latch),
-    .display_clk(display_clk)
+    .display_clk(display_clk),
+    .dout_a(dout_a),
+    .dout_b(dout_b)
 );
 
 localparam CLOCK_PERIOD = 50;
@@ -38,7 +41,7 @@ initial begin
     rst <= 1;
     #50
     rst <= 0;
-    #500000
+    #5000000
     $finish;
 end
 

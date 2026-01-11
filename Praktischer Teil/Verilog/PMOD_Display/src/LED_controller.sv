@@ -1,3 +1,8 @@
+/*
+iverilog -g2012 -o LED_controller_tb.vvp test/LED_controller_tb.sv LED_controller.sv
+vvp LED_controller_tb.vvp
+*/
+
 module LED_Controller #(
     parameter WIDTH = 64,
     parameter HEIGHT = 64,
@@ -26,7 +31,7 @@ typedef enum reg [2:0]
     LATCH_HIGH = 3'd3,
     LATCH_LOW = 3'd4,
     WAIT = 3'd5
-
+    
 } controller_statetype;
 
 controller_statetype con_state;
@@ -39,12 +44,13 @@ always @(posedge clk or posedge rst) begin
         row_addr <= '0;
         col_addr <= '0;
         display_clk <= 1'b0;
-            oe <= 1'b0;
-            re <= 0;
-            latch <= 0;
+        oe <= 1'b1;
+        re <= 1'b0;
+        latch <= 1'b0;
+        
         end
         else begin
-        unique case (con_state)
+        case (con_state)
             FETCH: begin
                 display_clk <= 1'b0;
                 col_addr <= col_counter;
@@ -52,11 +58,11 @@ always @(posedge clk or posedge rst) begin
                 con_state <= SHIFT1;
                 re <= 1'b1;
                 oe <= 1'b0;
-                latch <= 0;
+                latch <= 1'b0;
             end
             SHIFT1: begin
                 display_clk <= 1'b1;
-                oe <= 1'b1;
+                oe <= 1'b0;
                 re <= 1'b1;
                 con_state <= SHIFT2;
             end
@@ -65,28 +71,32 @@ always @(posedge clk or posedge rst) begin
                 re <= 1'b0;
                 if(col_counter == COLUMNS - 1) begin
                     con_state <= LATCH_HIGH;
-                    oe <= 1'b0;
+                    oe <= 1'b1;
                     col_counter <= '0;
                 end else begin
                     con_state <= FETCH;
                     col_counter <= col_counter + 1'b1;
-                    oe <= 1'b1;
+                    oe <= 1'b0;
                 end
             end
             LATCH_HIGH: begin
                 latch <= 1'b1;
-                display_clk <= 1'b1;
-                con_state <= LATCH_LOW;
+                display_clk <= 1'b0;
                 oe <= 1'b0;
+                con_state <= LATCH_LOW;
             end
             LATCH_LOW: begin
                 latch <= 1'b0;
                 display_clk <= 1'b0;
+                oe <= 1'b1;
+                row_counter <= row_counter + 1'b1;
+                con_state <= WAIT;
+            end
+            WAIT: begin
+                display_clk <= 1'b0;
+                latch <= 1'b0;
+                oe <= 1'b1;
                 con_state <= FETCH;
-                if (row_counter == ROWS - 1)
-                    row_counter <= '0;
-                else
-                    row_counter <= row_counter + 1'b1;
             end
         endcase
     end
@@ -134,7 +144,7 @@ endmodule
 
 
 module top(
-    input logic sys_clk,
+    input logic clk,
     input logic rst,
     output logic [4:0] row_addr,
     output logic [5:0] col_addr,
@@ -145,9 +155,7 @@ module top(
     output logic [3:0] dout_b
 );
 
-    logic re;
-    wire clk;
-    
+    logic re;    
 
     LED_Controller led_inst(
         .clk(clk),
@@ -159,12 +167,14 @@ module top(
         .latch(latch),
         .display_clk(display_clk)
     );
-        
-     Gowin_CLKDIV your_instance_name(
+    
+    /*    
+    Gowin_CLKDIV your_instance_name(
         .clkout(clk), //output clkout
         .hclkin(sys_clk), //input hclkin
         .resetn(~rst) //input resetn
     );
+    */
 
     framebuffer fb_inst(
         .clk(clk),
