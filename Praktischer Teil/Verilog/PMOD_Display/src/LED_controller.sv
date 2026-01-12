@@ -36,16 +36,20 @@ typedef enum reg [3:0]
 
 controller_statetype con_state;
 
-always @(negedge clk or posedge rst) begin
+localparam WAIT_CYCLES  =  16'd3;
+
+logic[15:0] wait_cntr;
+
+always @(posedge clk or posedge rst) begin
     if(rst)begin
         con_state <= FETCH;
         display_clk <= 1'b0;
-        row_addr <= '0;
-        col_addr <= '0;
-        display_clk <= 1'b0;
+        row_addr <= '1;
+        col_addr <= '1;
         oe <= 1'b1;
         re <= 1'b0;
         latch <= 1'b0;
+        wait_cntr <= '0;
         end
         else begin
         case (con_state)
@@ -55,12 +59,12 @@ always @(negedge clk or posedge rst) begin
                 row_addr <= row_addr;
                 con_state <= SHIFT1;
                 re <= 1'b1;
-                oe <= 1'b0;
+                oe <= 1'b1;
                 latch <= 1'b0;
             end
             SHIFT1: begin
                 display_clk <= 1'b1;
-                oe <= 1'b0;
+                oe <= 1'b1;
                 re <= 1'b1;
                 con_state <= SHIFT2;
             end
@@ -74,17 +78,17 @@ always @(negedge clk or posedge rst) begin
                 end else begin
                     con_state <= FETCH;
                     col_addr <= col_addr + 1'b1;
-                    oe <= 1'b0;
+                    oe <= 1'b1;
                 end
             end
             LATCH_HIGH: begin
                 latch <= 1'b1;
                 display_clk <= 1'b0;
-                oe <= 1'b0;
+                oe <= 1'b1;
                 con_state <= LATCH_LOW;
             end
             LATCH_LOW: begin
-                latch <= 1'b0;
+                latch <= 1'b1;
                 display_clk <= 1'b0;
                 oe <= 1'b1;
                 row_addr <= row_addr + 1'b1;
@@ -93,13 +97,21 @@ always @(negedge clk or posedge rst) begin
             WAIT: begin
                 display_clk <= 1'b0;
                 latch <= 1'b0;
-                oe <= 1'b1;
-                con_state <= FETCH;
+                oe <= 1'b0;
+                if(wait_cntr < WAIT_CYCLES - 1) begin
+                    wait_cntr <= wait_cntr + 1'b1;
+                    con_state <= WAIT;
+                end else begin
+                    wait_cntr <= '0;
+                    oe <= 1'b1;
+                    con_state <= FETCH;
+                end
             end
         endcase
     end
 end
 endmodule
+
 module framebuffer(
     input logic clk,
     input logic rst,
@@ -190,3 +202,4 @@ module top(
     );
 
 endmodule
+

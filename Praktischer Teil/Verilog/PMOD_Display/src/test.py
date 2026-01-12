@@ -4,7 +4,15 @@ NUM_LINES = 4096
 BITS_PER_LINE = 4
 BLOCK_SIZE = 64
 
-
+def green_square():
+    for x in range(8):
+        for x in range(8):
+            print("0010")
+        for y in range(64-8):
+            print("0000")
+    for x in range((64-8)*64):
+        print("0000")
+        
 def horizontal_line(a):
     for x in range(64):
         print(a)
@@ -148,4 +156,16 @@ def test_pattern_checkered():
                 color = "0000"
             print(color)
 
-test_pattern_checkered()
+def lines():
+    for x in range(8):
+        print("0010")
+    for y in range(56):
+        print("0000")
+    for x in range(7):
+        print("0001")
+        for y in range(63):
+            print("0000")
+    for x in range((64*(64-8))):
+        print("0000")
+
+lines()

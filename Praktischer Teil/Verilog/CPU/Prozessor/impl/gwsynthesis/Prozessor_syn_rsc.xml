@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Module name="topmodule" Register="10" Lut="2" T_Register="322(10)" T_Alu="157(0)" T_Lut="760(2)" T_Bsram="9(0)">
- <SubModule name="dmem" Lut="10" Bsram="8" T_Lut="10(10)" T_Bsram="8(8)"/>
+<Module name="topmodule" Register="10" Lut="2" T_Register="383(10)" T_Alu="180(0)" T_Lut="913(2)" T_Bsram="11(0)">
+ <SubModule name="dmem" Lut="4" Bsram="8" T_Lut="4(4)" T_Bsram="8(8)"/>
  <SubModule name="imem" Lut="14" T_Lut="14(14)"/>
- <SubModule name="machine" Register="312" Alu="157" Lut="734" Bsram="1" T_Register="312(312)" T_Alu="157(157)" T_Lut="734(734)" T_Bsram="1(1)"/>
- <SubModule name="your_instance_name"/>
+ <SubModule name="machine" Register="339" Alu="157" Lut="842" Bsram="1" T_Register="339(339)" T_Alu="157(157)" T_Lut="842(842)" T_Bsram="1(1)"/>
+ <SubModule name="fb_inst" Lut="8" Bsram="2" T_Lut="8(8)" T_Bsram="2(2)"/>
+ <SubModule name="i_clkdiv"/>
+ <SubModule name="led_inst" Register="34" Alu="23" Lut="43" T_Register="34(34)" T_Alu="23(23)" T_Lut="43(43)"/>
 </Module>

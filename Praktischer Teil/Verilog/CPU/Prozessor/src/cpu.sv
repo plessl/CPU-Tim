@@ -2,32 +2,42 @@ module topmodule (
 	input wire clk_in,
 	input wire rst,
 	output reg[6:0] pc_trace,
-	output reg clk_trace
+	output reg clk_trace,
+	output logic [4:0] row_addr,
+    output logic [5:0] col_addr,
+    output logic display_oe,
+    output logic latch,
+    output logic display_clk,
+    output logic [3:0] dout_a,
+    output logic [3:0] dout_b
 );
 
 wire clk;
 wire clk_div;
 wire [31:0] instr_connect;
-wire [31:0] dmem_rdata_connect;
+wire [31:0] bus_rdata_connect;
 wire imem_ce;
 wire dmem_ce;
+wire fbuf_ce;
+wire fbuf_re;
+wire fbuf_we;
 wire [31:0] pc;
 wire dmem_read;
-wire[3:0] dmem_write;
-wire [31:0] dmem_addr;
-wire [31:0] dmem_wdata;
+wire[3:0] dmem_we;
+wire [31:0] bus_addr;
+wire [31:0] bus_wdata;
 wire [31:0] instr_addr;
 wire [31:0] instr;
 
 ram_module dmem (
 		.clk(clk),
-		.we(dmem_write),
+		.we(dmem_we),
 		.ce(dmem_ce),
 		.re(dmem_read),
 		.rst(rst),
-		.addr(dmem_addr),
-		.data_in(dmem_wdata),
-		.data_out(dmem_rdata_connect)
+		.addr(bus_addr),
+		.data_in(bus_wdata),
+		.data_out(bus_rdata_connect)
 );
 
 rom_module imem (
@@ -40,23 +50,39 @@ rom_module imem (
 );
 
 fsm machine(
-	.clk(clk),
-	.rst(rst),
+		.clk(clk),
+		.rst(rst),
 
-	// instruction memory
-	.imem_ce(imem_ce),
-	.instr_addr(instr_addr),
-	.instr(instr),
-	.pc(pc),
+		// instruction memory
+		.imem_ce(imem_ce),
+		.instr_addr(instr_addr),
+		.instr(instr),
+		.pc(pc),
 
-	//data memory
-	.dmem_addr(dmem_addr),
-	.dmem_rdata(dmem_rdata_connect),
-	.dmem_ce(dmem_ce),
-	.dmem_read(dmem_read),
-	.dmem_write(dmem_write),
-	.dmem_wdata(dmem_wdata)
-	);
+		//data memory
+		.bus_addr(bus_addr),
+		.bus_rdata(bus_rdata_connect),
+		.dmem_ce(dmem_ce),
+		.dmem_read(dmem_read),
+		.dmem_we(dmem_we),
+		.bus_wdata(bus_wdata),
+        .fbuf_ce(fbuf_ce),
+        .fbuf_we(fbuf_we)
+);
+
+framebuffer fb_inst(
+    	.clk(clk),
+    	.rst(rst),
+    	.din(bus_wdata),
+    	.ce(fbuf_ce),
+    	.re(fbuf_re),
+    	.waddr(bus_addr),
+    	.we(fbuf_we),
+    	.raddr_a({20'b0, 1'b0, row_addr, col_addr}),
+    	.raddr_b({20'b0, 1'b1, row_addr, col_addr}),
+    	.dout_a(dout_a),
+    	.dout_b(dout_b)
+);
 
 always @(posedge clk) begin
 	pc_trace <= pc[6:0];
@@ -68,6 +94,17 @@ Gowin_CLKDIV i_clkdiv(
 		.hclkin(clk_in), //input hclkin
 		.resetn(~rst) //input resetn
 );
+
+LED_Controller led_inst(
+        .clk(clk),
+        .rst(rst),
+        .row_addr(row_addr),
+        .col_addr(col_addr),
+        .display_oe(display_oe),
+        .fbuf_re(fbuf_re),
+        .latch(latch),
+        .display_clk(display_clk)
+    );
 
 
 endmodule
@@ -120,18 +157,156 @@ end
 
 assign dout = ce ? rom_mem[addr >> 2] : 32'b0;
 
-/*always @(posedge clk) begin
-	if(rst)begin
-		dout <= 0;
-	end
-	else begin
-		if(ce)begin
-			dout <= rom_mem[addr];
-		end
-	end
-end*/
 endmodule
 
+module framebuffer(
+    input logic clk,
+    input logic rst,
+    input logic [31:0] din,
+    input logic ce,
+    input logic re,
+    input logic [31:0] waddr,
+    input logic we,
+    input logic [31:0] raddr_a,
+    input logic [31:0] raddr_b,
+    output logic [3:0] dout_a,
+    output logic [3:0] dout_b
+);
+
+reg [31:0] mem_a [4095:0];
+reg [31:0] mem_b [4095:0];
+
+initial begin
+    $readmemb("led.mi", mem_a, 0, 4095);
+    $readmemb("led.mi", mem_b, 0, 4095);
+end
+
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        dout_a <= '0;
+        dout_b <= '0;
+    end else begin
+        if (we && ce) begin
+            mem_a[waddr] <= din;
+            mem_b[waddr] <= din;
+        end
+        if (re && ce) begin
+            dout_a <= mem_a[raddr_a][3:0];
+            dout_b <= mem_b[raddr_b][3:0];
+        end
+    end
+end
+
+endmodule
+
+module LED_Controller #(
+    parameter WIDTH = 64,
+    parameter HEIGHT = 64,
+    parameter ROWS = 32,
+    parameter COLUMNS = 64
+)
+(
+    input wire clk,
+    input wire rst,
+    output logic[4:0] row_addr,
+    output logic[5:0] col_addr,
+    output logic display_oe,
+    output logic fbuf_re,
+    output logic latch,
+    output logic display_clk
+);
+/*
+reg [4:0] row_counter;
+reg [5:0] col_counter;
+*/
+typedef enum reg [3:0]
+{   
+    FETCH = 4'd0,
+    SHIFT1 = 4'd1,
+    SHIFT2 = 4'd2,
+    LATCH_HIGH = 4'd3,
+    LATCH_LOW = 4'd4,
+    WAIT = 4'd5
+    
+} controller_statetype;
+
+controller_statetype con_state;
+
+localparam WAIT_CYCLES  =  16'd3;
+
+logic[15:0] wait_cntr;
+
+always @(posedge clk or posedge rst) begin
+    if(rst)begin
+        con_state <= FETCH;
+        display_clk <= 1'b0;
+        row_addr <= '1;
+        col_addr <= '1;
+        display_oe <= 1'b1;
+        fbuf_re <= 1'b0;
+        latch <= 1'b0;
+        wait_cntr <= '0;
+        end
+        else begin
+        case (con_state)
+            FETCH: begin
+                display_clk <= 1'b0;
+                col_addr <= col_addr;
+                row_addr <= row_addr;
+                con_state <= SHIFT1;
+                fbuf_re <= 1'b1;
+                display_oe <= 1'b1;
+                latch <= 1'b0;
+            end
+            SHIFT1: begin
+                display_clk <= 1'b1;
+                display_oe <= 1'b1;
+                fbuf_re <= 1'b1;
+                con_state <= SHIFT2;
+            end
+            SHIFT2: begin           
+                display_clk <= 1'b0;
+                fbuf_re <= 1'b0;
+                if(col_addr == COLUMNS - 1) begin
+                    con_state <= LATCH_HIGH;
+                    display_oe <= 1'b1;
+                    col_addr <= '0;
+                end else begin
+                    con_state <= FETCH;
+                    col_addr <= col_addr + 1'b1;
+                    display_oe <= 1'b1;
+                end
+            end
+            LATCH_HIGH: begin
+                latch <= 1'b1;
+                display_clk <= 1'b0;
+                display_oe <= 1'b1;
+                con_state <= LATCH_LOW;
+            end
+            LATCH_LOW: begin
+                latch <= 1'b1;
+                display_clk <= 1'b0;
+                display_oe <= 1'b1;
+                row_addr <= row_addr + 1'b1;
+                con_state <= WAIT;
+            end
+            WAIT: begin
+                display_clk <= 1'b0;
+                latch <= 1'b0;
+                display_oe <= 1'b0;
+                if(wait_cntr < WAIT_CYCLES - 1) begin
+                    wait_cntr <= wait_cntr + 1'b1;
+                    con_state <= WAIT;
+                end else begin
+                    wait_cntr <= '0;
+                    display_oe <= 1'b1;
+                    con_state <= FETCH;
+                end
+            end
+        endcase
+    end
+end
+endmodule
 
 module fsm(
 	// general
@@ -145,12 +320,14 @@ module fsm(
 	output reg [31:0] pc,
 	
 	// data MEMORY
-	output reg[31:0] dmem_addr,
-	input wire[31:0] dmem_rdata,
+	output reg[31:0] bus_addr,
+	input wire[31:0] bus_rdata,
 	output reg dmem_ce,
+	output reg fbuf_ce,
 	output reg dmem_read,
-	output reg[3:0] dmem_write,
-	output reg[31:0] dmem_wdata
+	output reg fbuf_we, 
+	output reg[3:0] dmem_we,
+	output reg[31:0] bus_wdata
 );
 
 	typedef enum reg[2:0]{
@@ -174,7 +351,7 @@ module fsm(
 	reg [31:0] tmp_rd;
 	reg [31:0] tmp_mem_addr;
 	reg [4:0] shift_amt;
-	reg [31:0] tmp_memw_data;
+	reg [31:0] tmp_bus_wdata;
 	
 	integer i;
 	integer d;
@@ -223,10 +400,10 @@ module fsm(
 			tmp_rd <= 0;
 			instr_addr <= 0;
 			dmem_read <= 0;
-			dmem_write <= 4'b0000;
+			dmem_we <= 4'b0000;
 			dmem_ce <= 0;
 			imem_ce <= 0;
-			dmem_addr <= 0;
+			bus_addr <= 0;
 			pc_next <= 0;
 			for (i = 0; i < 32; i = i + 1)
 				regfile[i] <= 0;
@@ -345,16 +522,23 @@ module fsm(
 							endcase
 						end
 						7'b0000011: begin	// Load
-							dmem_ce <= 1;
-							dmem_read <= 1;
-							tmp_mem_addr <= regfile[rs1] + imm;
-							dmem_addr <= regfile[rs1] + imm;
+							if(bus_addr[8:4] == 4'b0001) begin
+								dmem_ce <= 1;
+								dmem_read <= 1;
+								tmp_mem_addr <= regfile[rs1] + imm;
+								bus_addr <= regfile[rs1] + imm;
+							end
 						end
 						7'b0100011: begin   //S type
-							dmem_ce <= 1;
-							tmp_mem_addr <= regfile[rs1] + imm;
-							dmem_addr <= regfile[rs1] + imm;
-							tmp_memw_data <= regfile[rs2];
+							if(bus_addr[8:4] == 4'b0001) begin
+								tmp_mem_addr <= regfile[rs1] + imm;
+								bus_addr <= regfile[rs1] + imm;
+								tmp_bus_wdata <= regfile[rs2];
+							end
+							if(bus_addr[8:4] == 4'b0010)begin
+								bus_addr <= regfile[rs1] + imm;
+								tmp_bus_wdata <= regfile[rs2];
+							end
 						end
 
 						7'b1100011: begin   //B type
@@ -401,58 +585,64 @@ module fsm(
 				MEMORY1: begin
 					state <= MEMORY2;
 					case (opcode)
-					7'b0000011: begin
+					7'b0000011: begin  // Load
 						state <= MEMORY2;
 					end
-					7'b0100011: begin
+					7'b0100011: begin	// Store
+						if(bus_addr[8:4] == 4'b0010) begin
+							fbuf_ce <= 1'b1;
+							fbuf_we <= 1'b1;
+							bus_wdata <= tmp_bus_wdata;
+						end else begin
+						dmem_ce <= 1;
 						dmem_read <= 0;
-						dmem_wdata <= 32'b0;
 						case (funct3)
 							3'b000: begin      //sb
 								case (tmp_mem_addr[1:0])
 									2'b00: begin
-										dmem_write <= 4'b0001;
-										dmem_wdata <= {24'b0, tmp_memw_data[7:0]};
+										dmem_we <= 4'b0001;
+										bus_wdata <= {24'b0, tmp_bus_wdata[7:0]};
 									end
 									2'b01: begin
-										dmem_write <= 4'b0010;
-										dmem_wdata <= {16'b0, tmp_memw_data[7:0], 8'b0};
+										dmem_we <= 4'b0010;
+										bus_wdata <= {6'b0, tmp_bus_wdata[7:0], 8'b0};
 									end
 									2'b10: begin
-										dmem_write <= 4'b0100;
-										dmem_wdata <= {8'b0, tmp_memw_data[7:0], 16'b0};
+										dmem_we <= 4'b0100;
+										bus_wdata <= {8'b0, tmp_bus_wdata[7:0], 16'b0};
 									end
 									2'b11: begin
-										dmem_write <= 4'b1000;
-										dmem_wdata <= {tmp_memw_data[7:0], 24'b0};
+										dmem_we <= 4'b1000;
+										bus_wdata <= {tmp_bus_wdata[7:0], 24'b0};
 									end
-									default: dmem_wdata <= 0;
+									default: bus_wdata <= 0;
 								endcase
 							end
 							3'b001:  begin   //sh
 								case (tmp_mem_addr[1:0])
 									2'b00: begin
-										dmem_write <= 4'b0011;
-										dmem_wdata <= {16'b0, tmp_memw_data[15:0]};
+										dmem_we <= 4'b0011;
+										bus_wdata <= {16'b0, tmp_bus_wdata[15:0]};
 									end
 									2'b10: begin
-										dmem_write <= 4'b1100;
-										dmem_wdata <= {tmp_memw_data[15:0], 16'b0};
+										dmem_we <= 4'b1100;
+										bus_wdata <= {tmp_bus_wdata[15:0], 16'b0};
 									end
-									default: dmem_wdata <= 0;
+									default: bus_wdata <= 0;
 								endcase
 							end
 							3'b010: begin	//sw
 								if (tmp_mem_addr[1:0] == 2'b00)begin
-									dmem_write <= 4'b1111;
-									dmem_wdata <= tmp_memw_data;
+									dmem_we <= 4'b1111;
+									bus_wdata <= tmp_bus_wdata;
 								end
 								else 
-									dmem_wdata <= 32'b0;
+									bus_wdata <= 32'b0;
 							end
 							default:
-								dmem_wdata <= 0;
+								bus_wdata <= 0;
 						endcase
+						end
 					end
 					default:
 						$display("undefined");
@@ -466,13 +656,13 @@ module fsm(
 							3'b000: begin     //lb
 								case (tmp_mem_addr[1:0])
 									2'b00:
-										tmp_rd <= {{24{dmem_rdata[7]}}, dmem_rdata[7:0]};
+										tmp_rd <= {{24{bus_rdata[7]}}, bus_rdata[7:0]};
 									2'b01:
-										tmp_rd <= {{24{dmem_rdata[15]}}, dmem_rdata[15:8]};
+										tmp_rd <= {{24{bus_rdata[15]}}, bus_rdata[15:8]};
 									2'b10:
-										tmp_rd <= {{24{dmem_rdata[23]}}, dmem_rdata[23:16]};
+										tmp_rd <= {{24{bus_rdata[23]}}, bus_rdata[23:16]};
 									2'b11:
-										tmp_rd <= {{24{dmem_rdata[31]}}, dmem_rdata[31:24]};
+										tmp_rd <= {{24{bus_rdata[31]}}, bus_rdata[31:24]};
 									default:
 										tmp_rd <= 32'b0;
 								endcase
@@ -480,25 +670,25 @@ module fsm(
 							3'b001: begin     //lh
 								case (tmp_mem_addr[1:0])
 									2'b00:
-										tmp_rd <= {{16{dmem_rdata[15]}}, dmem_rdata[15:0]};
+										tmp_rd <= {{16{bus_rdata[15]}}, bus_rdata[15:0]};
 									2'b10:
-										tmp_rd <= {{16{dmem_rdata[31]}}, dmem_rdata[31:16]};
+										tmp_rd <= {{16{bus_rdata[31]}}, bus_rdata[31:16]};
 									default:
 										tmp_rd <= 32'b0;
 								endcase
 							end
 							3'b010:       //lw
-								tmp_rd <= dmem_rdata;
+								tmp_rd <= bus_rdata;
 							3'b100: begin     //lbu
 								case (tmp_mem_addr[1:0])
 									2'b00:
-										tmp_rd <= {24'b0, dmem_rdata[7:0]};
+										tmp_rd <= {24'b0, bus_rdata[7:0]};
 									2'b01:
-										tmp_rd <= {24'b0, dmem_rdata[15:8]};
+										tmp_rd <= {24'b0, bus_rdata[15:8]};
 									2'b10:
-										tmp_rd <= {24'b0, dmem_rdata[23:16]};
+										tmp_rd <= {24'b0, bus_rdata[23:16]};
 									2'b11:
-										tmp_rd <= {24'b0, dmem_rdata[31:24]};
+										tmp_rd <= {24'b0, bus_rdata[31:24]};
 									default:
 										tmp_rd <= 32'b0;
 								endcase
@@ -506,9 +696,9 @@ module fsm(
 							3'b101: begin	//lhu
 								case (tmp_mem_addr[1:0])
 									2'b00:
-										tmp_rd <= {16'b0, dmem_rdata[15:0]};
+										tmp_rd <= {16'b0, bus_rdata[15:0]};
 									2'b10:
-										tmp_rd <= {16'b0, dmem_rdata[31:16]};
+										tmp_rd <= {16'b0, bus_rdata[31:16]};
 									default:
 										tmp_rd <= 32'b0;
 								endcase
@@ -521,10 +711,10 @@ module fsm(
 				end
 				WRITEBACK: begin
 					dmem_ce <= 0;
-					dmem_write <= 4'b0000;
+					dmem_we <= 4'b0000;
 					dmem_read <= 0;
-					dmem_wdata <= 0;
-					dmem_addr <= 0;
+					bus_wdata <= 0;
+					bus_addr <= 0;
 					pc <= pc_next;
 					if(rd != 0) regfile[rd] <= tmp_rd;
 					state <= FETCH;
