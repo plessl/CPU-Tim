@@ -36,8 +36,6 @@ typedef enum reg [3:0]
 
 controller_statetype con_state;
 
-localparam WAIT_CYCLES  =  16'd3;
-
 logic[15:0] wait_cntr;
 
 always @(posedge clk or posedge rst) begin
@@ -49,7 +47,6 @@ always @(posedge clk or posedge rst) begin
         oe <= 1'b1;
         re <= 1'b0;
         latch <= 1'b0;
-        wait_cntr <= '0;
         end
         else begin
         case (con_state)
@@ -64,7 +61,7 @@ always @(posedge clk or posedge rst) begin
             end
             SHIFT1: begin
                 display_clk <= 1'b1;
-                oe <= 1'b1;
+                oe <= 1'b0;
                 re <= 1'b1;
                 con_state <= SHIFT2;
             end
@@ -88,7 +85,7 @@ always @(posedge clk or posedge rst) begin
                 con_state <= LATCH_LOW;
             end
             LATCH_LOW: begin
-                latch <= 1'b1;
+                latch <= 1'b0;
                 display_clk <= 1'b0;
                 oe <= 1'b1;
                 row_addr <= row_addr + 1'b1;
@@ -96,16 +93,9 @@ always @(posedge clk or posedge rst) begin
             end
             WAIT: begin
                 display_clk <= 1'b0;
-                latch <= 1'b0;
+                latch <= 1'b1;
                 oe <= 1'b0;
-                if(wait_cntr < WAIT_CYCLES - 1) begin
-                    wait_cntr <= wait_cntr + 1'b1;
-                    con_state <= WAIT;
-                end else begin
-                    wait_cntr <= '0;
-                    oe <= 1'b1;
-                    con_state <= FETCH;
-                end
+                con_state <= FETCH;
             end
         endcase
     end

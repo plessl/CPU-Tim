@@ -9,52 +9,52 @@
   "SubInsts" : [
    {
     "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "InstLine" : 32,
+    "InstLine" : 30,
     "InstName" : "dmem",
     "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "ModuleLine" : 113,
+    "ModuleLine" : 105,
     "ModuleName" : "ram_module"
    },
    {
     "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "InstLine" : 43,
+    "InstLine" : 41,
     "InstName" : "imem",
     "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "ModuleLine" : 142,
+    "ModuleLine" : 134,
     "ModuleName" : "rom_module"
    },
    {
     "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "InstLine" : 52,
+    "InstLine" : 50,
     "InstName" : "machine",
     "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "ModuleLine" : 311,
+    "ModuleLine" : 303,
     "ModuleName" : "fsm"
    },
    {
     "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "InstLine" : 73,
+    "InstLine" : 70,
     "InstName" : "fb_inst",
     "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "ModuleLine" : 162,
+    "ModuleLine" : 154,
     "ModuleName" : "framebuffer"
    },
    {
     "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "InstLine" : 92,
-    "InstName" : "i_clkdiv",
-    "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/gowin_clkdiv/gowin_clkdiv.v",
-    "ModuleLine" : 10,
-    "ModuleName" : "Gowin_CLKDIV"
-   },
-   {
-    "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "InstLine" : 98,
+    "InstLine" : 90,
     "InstName" : "led_inst",
     "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/cpu.sv",
-    "ModuleLine" : 202,
+    "ModuleLine" : 194,
     "ModuleName" : "LED_Controller"
    }
   ]
+ },
+ {
+  "InstFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/gowin_clkdiv/gowin_clkdiv.v",
+  "InstLine" : 10,
+  "InstName" : "Gowin_CLKDIV",
+  "ModuleFile" : "/Users/theilmann/Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/gowin_clkdiv/gowin_clkdiv.v",
+  "ModuleLine" : 10,
+  "ModuleName" : "Gowin_CLKDIV"
  }
 ]

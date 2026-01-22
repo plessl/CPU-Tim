@@ -1,5 +1,5 @@
 module topmodule (
-	input wire clk_in,
+	input wire clk,
 	input wire rst,
 	output reg[6:0] pc_trace,
 	output reg clk_trace,
@@ -12,13 +12,11 @@ module topmodule (
     output logic [3:0] dout_b
 );
 
-wire clk;
 wire clk_div;
 wire [31:0] instr_connect;
 wire [31:0] bus_rdata_connect;
 wire imem_ce;
 wire dmem_ce;
-wire fbuf_ce;
 wire fbuf_re;
 wire fbuf_we;
 wire [31:0] pc;
@@ -66,7 +64,6 @@ fsm machine(
 		.dmem_read(dmem_read),
 		.dmem_we(dmem_we),
 		.bus_wdata(bus_wdata),
-        .fbuf_ce(fbuf_ce),
         .fbuf_we(fbuf_we)
 );
 
@@ -74,7 +71,7 @@ framebuffer fb_inst(
     	.clk(clk),
     	.rst(rst),
     	.din(bus_wdata),
-    	.ce(fbuf_ce),
+    	.ce(1'b1),
     	.re(fbuf_re),
     	.waddr(bus_addr),
     	.we(fbuf_we),
@@ -89,11 +86,6 @@ always @(posedge clk) begin
 	clk_trace <= ~clk_trace;
 end
 
-Gowin_CLKDIV i_clkdiv(
-		.clkout(clk), //output clkout
-		.hclkin(clk_in), //input hclkin
-		.resetn(~rst) //input resetn
-);
 
 LED_Controller led_inst(
         .clk(clk),
@@ -152,7 +144,7 @@ reg [31:0] rom_mem [4095:0];
 
 
 initial begin
-	$readmemh("rom.mi", rom_mem, 0, 4);
+	$readmemh("rom.mi", rom_mem, 0, 110);
 end
 
 assign dout = ce ? rom_mem[addr >> 2] : 32'b0;
@@ -183,14 +175,14 @@ end
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
-        dout_a <= '0;
-        dout_b <= '0;
+        dout_a <= 0;
+        dout_b <= 0;
     end else begin
-        if (we && ce) begin
+        if (we) begin
             mem_a[waddr] <= din;
             mem_b[waddr] <= din;
         end
-        if (re && ce) begin
+        if (re) begin
             dout_a <= mem_a[raddr_a][3:0];
             dout_b <= mem_b[raddr_b][3:0];
         end
@@ -240,8 +232,8 @@ always @(posedge clk or posedge rst) begin
     if(rst)begin
         con_state <= FETCH;
         display_clk <= 1'b0;
-        row_addr <= '1;
-        col_addr <= '1;
+        row_addr <= 0;
+        col_addr <= 0;
         display_oe <= 1'b1;
         fbuf_re <= 1'b0;
         latch <= 1'b0;
@@ -323,7 +315,6 @@ module fsm(
 	output reg[31:0] bus_addr,
 	input wire[31:0] bus_rdata,
 	output reg dmem_ce,
-	output reg fbuf_ce,
 	output reg dmem_read,
 	output reg fbuf_we, 
 	output reg[3:0] dmem_we,
@@ -402,6 +393,7 @@ module fsm(
 			dmem_read <= 0;
 			dmem_we <= 4'b0000;
 			dmem_ce <= 0;
+			fbuf_we <= 0;
 			imem_ce <= 0;
 			bus_addr <= 0;
 			pc_next <= 0;
@@ -409,6 +401,11 @@ module fsm(
 				regfile[i] <= 0;
 		end
 		else begin
+			fbuf_we <= 0;
+			dmem_ce <= 0;
+			dmem_read <= 0;
+			dmem_we <= 4'b0000;
+
 			case (state)
 				FETCH: begin
 					//ir <= instr;
@@ -448,7 +445,7 @@ module fsm(
 					state <= EXECUTE;
 				end
 				EXECUTE: begin
-					imem_ce <= 0;
+					imem_ce <= 1;
 					case (opcode)
 						7'b0110011: begin        //R type
 							shift_amt <= regfile[rs2][4:0];
@@ -522,22 +519,22 @@ module fsm(
 							endcase
 						end
 						7'b0000011: begin	// Load
+							tmp_mem_addr <= regfile[rs1] + imm;
+							bus_addr <= regfile[rs1] + imm;
 							if(bus_addr[8:4] == 4'b0001) begin
 								dmem_ce <= 1;
 								dmem_read <= 1;
-								tmp_mem_addr <= regfile[rs1] + imm;
-								bus_addr <= regfile[rs1] + imm;
 							end
 						end
 						7'b0100011: begin   //S type
+							tmp_mem_addr <= regfile[rs1] + imm;
+							bus_addr <= regfile[rs1] + imm;
+							tmp_bus_wdata <= regfile[rs2];
 							if(bus_addr[8:4] == 4'b0001) begin
-								tmp_mem_addr <= regfile[rs1] + imm;
-								bus_addr <= regfile[rs1] + imm;
-								tmp_bus_wdata <= regfile[rs2];
+								dmem_ce <= 1;
 							end
 							if(bus_addr[8:4] == 4'b0010)begin
-								bus_addr <= regfile[rs1] + imm;
-								tmp_bus_wdata <= regfile[rs2];
+								fbuf_we <= 1'b1;
 							end
 						end
 
@@ -590,7 +587,6 @@ module fsm(
 					end
 					7'b0100011: begin	// Store
 						if(bus_addr[8:4] == 4'b0010) begin
-							fbuf_ce <= 1'b1;
 							fbuf_we <= 1'b1;
 							bus_wdata <= tmp_bus_wdata;
 						end else begin
