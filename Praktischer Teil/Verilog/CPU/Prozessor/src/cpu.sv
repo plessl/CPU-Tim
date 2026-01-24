@@ -115,6 +115,13 @@ module ram_module(
 
 reg [31:0] ram_mem [4095:0];
 
+// readmem (index of first word, index of last word; both are zero-indexed)
+initial begin
+	$readmemh("ram.mi", ram_mem, 0, 255);
+//	$readmemh("ram.mi", ram_mem);
+end
+
+
 always @(posedge clk) begin
 	if(ce) begin
 		if (we[0]) ram_mem[addr >> 2][7:0] <= data_in[7:0];
@@ -144,7 +151,10 @@ reg [31:0] rom_mem [4095:0];
 
 
 initial begin
-	$readmemh("rom.mi", rom_mem, 0, 110);
+	$readmemh("rom.mi", rom_mem, 0, 7);
+//	$readmemh("rom.mi", rom_mem);
+	$display("ROM loaded: first instruction = %h", rom_mem[0]);
+
 end
 
 assign dout = ce ? rom_mem[addr >> 2] : 32'b0;
@@ -171,6 +181,9 @@ reg [31:0] mem_b [4095:0];
 initial begin
     $readmemb("led.mi", mem_a, 0, 4095);
     $readmemb("led.mi", mem_b, 0, 4095);
+//    $readmemb("led.mi", mem_a);
+//    $readmemb("led.mi", mem_b);
+
 end
 
 always @(posedge clk or posedge rst) begin
@@ -179,12 +192,12 @@ always @(posedge clk or posedge rst) begin
         dout_b <= 0;
     end else begin
         if (we) begin
-            mem_a[waddr] <= din;
-            mem_b[waddr] <= din;
+            mem_a[waddr[11:0]] <= din;
+            mem_b[waddr[11:0]] <= din;
         end
         if (re) begin
-            dout_a <= mem_a[raddr_a][3:0];
-            dout_b <= mem_b[raddr_b][3:0];
+            dout_a <= mem_a[raddr_a[11:0]][3:0];
+            dout_b <= mem_b[raddr_b[11:0]][3:0];
         end
     end
 end
@@ -394,7 +407,7 @@ module fsm(
 			dmem_we <= 4'b0000;
 			dmem_ce <= 0;
 			fbuf_we <= 0;
-			imem_ce <= 0;
+			imem_ce <= 1;
 			bus_addr <= 0;
 			pc_next <= 0;
 			for (i = 0; i < 32; i = i + 1)
@@ -405,11 +418,11 @@ module fsm(
 			dmem_ce <= 0;
 			dmem_read <= 0;
 			dmem_we <= 4'b0000;
+			imem_ce <= 1;
 
 			case (state)
 				FETCH: begin
 					//ir <= instr;
-					imem_ce <= 1;
 					instr_addr <= pc;
 					pc_next <= pc + 4;
 					state <= DECODE;
@@ -445,7 +458,6 @@ module fsm(
 					state <= EXECUTE;
 				end
 				EXECUTE: begin
-					imem_ce <= 1;
 					case (opcode)
 						7'b0110011: begin        //R type
 							shift_amt <= regfile[rs2][4:0];
@@ -530,10 +542,12 @@ module fsm(
 							tmp_mem_addr <= regfile[rs1] + imm;
 							bus_addr <= regfile[rs1] + imm;
 							tmp_bus_wdata <= regfile[rs2];
-							if(bus_addr[8:4] == 4'b0001) begin
+							// store to data memory
+							if(bus_addr[31:15] == 16'b0001) begin
 								dmem_ce <= 1;
 							end
-							if(bus_addr[8:4] == 4'b0010)begin
+							// store to framebuffer
+							if(bus_addr[31:15] == 16'h0002)begin
 								fbuf_we <= 1'b1;
 							end
 						end
@@ -586,7 +600,9 @@ module fsm(
 						state <= MEMORY2;
 					end
 					7'b0100011: begin	// Store
-						if(bus_addr[8:4] == 4'b0010) begin
+						// if address in framebuffer range
+						// TODO: convert to configurable address range later.
+						if(bus_addr[31:16] == 16'h0002) begin
 							fbuf_we <= 1'b1;
 							bus_wdata <= tmp_bus_wdata;
 						end else begin
