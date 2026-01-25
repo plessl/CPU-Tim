@@ -289,10 +289,14 @@ always @(posedge clk or posedge rst) begin
                 con_state <= LATCH_LOW;
             end
             LATCH_LOW: begin
-                latch <= 1'b1;
+                latch <= 1'b0;
                 display_clk <= 1'b0;
                 display_oe <= 1'b1;
-                row_addr <= row_addr + 1'b1;
+                if(row_addr == ROWS - 1) begin
+                    row_addr <= '0;
+                end else begin
+                    row_addr <= row_addr + 1'b1;
+                end
                 con_state <= WAIT;
             end
             WAIT: begin
@@ -533,7 +537,7 @@ module fsm(
 						7'b0000011: begin	// Load
 							tmp_mem_addr <= regfile[rs1] + imm;
 							bus_addr <= regfile[rs1] + imm;
-							if(bus_addr[8:4] == 4'b0001) begin
+							if(bus_addr[31:15] == 16'h0001) begin
 								dmem_ce <= 1;
 								dmem_read <= 1;
 							end
@@ -543,7 +547,7 @@ module fsm(
 							bus_addr <= regfile[rs1] + imm;
 							tmp_bus_wdata <= regfile[rs2];
 							// store to data memory
-							if(bus_addr[31:15] == 16'b0001) begin
+							if(bus_addr[31:15] == 16'h0001) begin
 								dmem_ce <= 1;
 							end
 							// store to framebuffer
