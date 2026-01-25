@@ -101,7 +101,8 @@ LED_Controller led_inst(
 
 endmodule
 
-
+// Single-port synchronous block RAM with byte-enables for writes
+// read has one cycle latency, compare with SUG949E p.67
 module ram_module(
 	input wire clk,
 	input wire re,
@@ -114,6 +115,9 @@ module ram_module(
 );
 
 reg [31:0] ram_mem [4095:0];
+reg [31:0] dout_reg;
+
+wire index = addr >> 2;
 
 // readmem (index of first word, index of last word; both are zero-indexed)
 initial begin
@@ -121,18 +125,39 @@ initial begin
 //	$readmemh("ram.mi", ram_mem);
 end
 
-
 always @(posedge clk) begin
 	if(ce) begin
-		if (we[0]) ram_mem[addr >> 2][7:0] <= data_in[7:0];
-		if (we[1]) ram_mem[addr >> 2][15:8] <= data_in[15:8];
-		if (we[2]) ram_mem[addr >> 2][23:16] <= data_in[23:16];
-		if (we[3]) ram_mem[addr >> 2][31:24] <= data_in[31:24];
-	end
-	if(re) begin
-		data_out <= ram_mem[addr >> 2];
+		if (we[0]) ram_mem[index][7:0] <= data_in[7:0];
+		if (we[1]) ram_mem[index][15:8] <= data_in[15:8];
+		if (we[2]) ram_mem[index][23:16] <= data_in[23:16];
+		if (we[3]) ram_mem[index][31:24] <= data_in[31:24];
 	end
 end
+
+always @(posedge clk) begin
+	if(rst) begin
+		dout_reg <= 32'b0;
+	end
+	else begin
+	if(ce) begin
+			dout_reg <= ram_mem[index];
+	end
+	end
+end
+
+always @(posedge clk) begin
+	if(rst) begin
+		data_out <= 32'b0;
+	end
+	else begin
+		// TODO: check whether we want to gate this update with RE or RE&CE signal here. Compare with SUG949E p.67
+		// currently we update data_out on every clock when not in reset.
+		//if(re && ce) begin
+		data_out <= dout_reg;
+		//end
+	end
+end
+
 
 endmodule
 
@@ -357,9 +382,10 @@ module fsm(
 	reg [6:0] funct7;
 
 	reg [31:0] tmp_rd;
-	reg [31:0] tmp_mem_addr;
 	reg [4:0] shift_amt;
 	reg [31:0] tmp_bus_wdata;
+	
+	reg [31:0] mem_addr;
 	
 	integer i;
 	integer d;
@@ -535,23 +561,28 @@ module fsm(
 							endcase
 						end
 						7'b0000011: begin	// Load
-							tmp_mem_addr <= regfile[rs1] + imm;
+							mem_addr = regfile[rs1] + imm;
 							bus_addr <= regfile[rs1] + imm;
-							if(bus_addr[31:15] == 16'h0001) begin
+							//if(mem_addr[31:15] == 16'h0001) begin
+							//if(bus_addr[31:15] == 16'h0001) begin
+							if(((regfile[rs1] + imm) >> 16) == 16'h0001) begin
 								dmem_ce <= 1;
 								dmem_read <= 1;
 							end
 						end
 						7'b0100011: begin   //S type
-							tmp_mem_addr <= regfile[rs1] + imm;
+							mem_addr = regfile[rs1] + imm;
 							bus_addr <= regfile[rs1] + imm;
 							tmp_bus_wdata <= regfile[rs2];
 							// store to data memory
-							if(bus_addr[31:15] == 16'h0001) begin
+							//if(bus_addr[31:15] == 16'h0001) begin
+							//if(mem_addr[31:15] == 16'h0001) begin
+							if(((regfile[rs1] + imm) >> 16) == 16'h0001) begin
 								dmem_ce <= 1;
 							end
 							// store to framebuffer
-							if(bus_addr[31:15] == 16'h0002)begin
+							if(((regfile[rs1] + imm) >> 16) == 16'h0002) begin
+							//if(bus_addr[31:15] == 16'h0002)begin
 								fbuf_we <= 1'b1;
 							end
 						end
@@ -601,7 +632,8 @@ module fsm(
 					state <= MEMORY2;
 					case (opcode)
 					7'b0000011: begin  // Load
-						state <= MEMORY2;
+						dmem_ce <= 1;
+						dmem_read <= 1;
 					end
 					7'b0100011: begin	// Store
 						// if address in framebuffer range
@@ -614,7 +646,7 @@ module fsm(
 						dmem_read <= 0;
 						case (funct3)
 							3'b000: begin      //sb
-								case (tmp_mem_addr[1:0])
+								case (bus_addr[1:0])
 									2'b00: begin
 										dmem_we <= 4'b0001;
 										bus_wdata <= {24'b0, tmp_bus_wdata[7:0]};
@@ -635,7 +667,7 @@ module fsm(
 								endcase
 							end
 							3'b001:  begin   //sh
-								case (tmp_mem_addr[1:0])
+								case (bus_addr[1:0])
 									2'b00: begin
 										dmem_we <= 4'b0011;
 										bus_wdata <= {16'b0, tmp_bus_wdata[15:0]};
@@ -648,7 +680,7 @@ module fsm(
 								endcase
 							end
 							3'b010: begin	//sw
-								if (tmp_mem_addr[1:0] == 2'b00)begin
+								if (bus_addr[1:0] == 2'b00)begin
 									dmem_we <= 4'b1111;
 									bus_wdata <= tmp_bus_wdata;
 								end
@@ -670,7 +702,7 @@ module fsm(
 						7'b0000011: begin
 						case (funct3)
 							3'b000: begin     //lb
-								case (tmp_mem_addr[1:0])
+								case (bus_addr[1:0])
 									2'b00:
 										tmp_rd <= {{24{bus_rdata[7]}}, bus_rdata[7:0]};
 									2'b01:
@@ -684,7 +716,7 @@ module fsm(
 								endcase
 							end
 							3'b001: begin     //lh
-								case (tmp_mem_addr[1:0])
+								case (bus_addr[1:0])
 									2'b00:
 										tmp_rd <= {{16{bus_rdata[15]}}, bus_rdata[15:0]};
 									2'b10:
@@ -696,7 +728,7 @@ module fsm(
 							3'b010:       //lw
 								tmp_rd <= bus_rdata;
 							3'b100: begin     //lbu
-								case (tmp_mem_addr[1:0])
+								case (bus_addr[1:0])
 									2'b00:
 										tmp_rd <= {24'b0, bus_rdata[7:0]};
 									2'b01:
@@ -710,7 +742,7 @@ module fsm(
 								endcase
 							end
 							3'b101: begin	//lhu
-								case (tmp_mem_addr[1:0])
+								case (bus_addr[1:0])
 									2'b00:
 										tmp_rd <= {16'b0, bus_rdata[15:0]};
 									2'b10:
