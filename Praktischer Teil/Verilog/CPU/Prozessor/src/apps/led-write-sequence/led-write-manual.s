@@ -19,16 +19,11 @@ riscv64-unknown-elf-objdump -M numeric,no-aliases --disassemble-all led-red-asm.
 _start:
 
 li x1,FB_BASE_ADR     # laod base framebuffer base address
-li x3, COL_RED       # Load immediate value for red LED bit mask
-li x4, COL_GREEN       # Load immediate value for red LED bit mask
-li x5, COL_BLUE       # Load immediate value for red LED bit mask
+li x3, COL_GREEN       # Load immediate value for red LED bit mask
 
-sw x4, 0(x1)
-sw x4, 8(x1)
-sw x4, 12(x1)
-sw x3, 1024(x1)  # 4096*4 -4
+sw x3, 0(x2)
+sw x3, 4(x2)
+sw x3, 8(x2)
+sw x3, 12(x2)
 
-# sw x4, 1(x1)  # 2
-# sw x3, 3(x1)  # 4
-
-# j _start               # Infinite loop
+j _start               # Infinite loop

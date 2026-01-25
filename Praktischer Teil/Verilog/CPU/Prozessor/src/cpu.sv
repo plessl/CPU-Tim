@@ -75,8 +75,9 @@ framebuffer fb_inst(
     	.re(fbuf_re),
     	.waddr(bus_addr),
     	.we(fbuf_we),
-    	.raddr_a({20'b0, 1'b0, row_addr, col_addr}),
-    	.raddr_b({20'b0, 1'b1, row_addr, col_addr}),
+		// row: 5 bit, col: 6bit, word aligned: 2 bits zero
+    	.raddr_a({15'b0, 4'b1000, row_addr, col_addr, 2'b0}),
+    	.raddr_b({15'b0, 4'b1001, row_addr, col_addr, 2'b0}),
     	.dout_a(dout_a),
     	.dout_b(dout_b)
 );
@@ -117,7 +118,7 @@ module ram_module(
 reg [31:0] ram_mem [4095:0];
 reg [31:0] dout_reg;
 
-wire index = addr >> 2;
+wire [31:0] index = addr >> 2;
 
 // readmem (index of first word, index of last word; both are zero-indexed)
 initial begin
@@ -139,9 +140,9 @@ always @(posedge clk) begin
 		dout_reg <= 32'b0;
 	end
 	else begin
-	if(ce) begin
+		if(ce) begin
 			dout_reg <= ram_mem[index];
-	end
+		end
 	end
 end
 
@@ -176,8 +177,8 @@ reg [31:0] rom_mem [4095:0];
 
 
 initial begin
-	$readmemh("rom.mi", rom_mem, 0, 7);
-//	$readmemh("rom.mi", rom_mem);
+//	$readmemh("rom.mi", rom_mem, 0, 7);
+	$readmemh("rom.mi", rom_mem);
 	$display("ROM loaded: first instruction = %h", rom_mem[0]);
 
 end
@@ -217,12 +218,12 @@ always @(posedge clk or posedge rst) begin
         dout_b <= 0;
     end else begin
         if (we) begin
-            mem_a[waddr[11:0]] <= din;
-            mem_b[waddr[11:0]] <= din;
+            mem_a[waddr[13:2]] <= din;
+            mem_b[waddr[13:2]] <= din;
         end
         if (re) begin
-            dout_a <= mem_a[raddr_a[11:0]][3:0];
-            dout_b <= mem_b[raddr_b[11:0]][3:0];
+            dout_a <= mem_a[raddr_a[13:2]][3:0];
+            dout_b <= mem_b[raddr_b[13:2]][3:0];
         end
     end
 end
@@ -262,7 +263,7 @@ typedef enum reg [3:0]
 
 controller_statetype con_state;
 
-localparam WAIT_CYCLES  =  16'd3;
+localparam WAIT_CYCLES  =  16'd8;
 
 logic[15:0] wait_cntr;
 
@@ -384,8 +385,6 @@ module fsm(
 	reg [31:0] tmp_rd;
 	reg [4:0] shift_amt;
 	reg [31:0] tmp_bus_wdata;
-	
-	reg [31:0] mem_addr;
 	
 	integer i;
 	integer d;
@@ -561,9 +560,7 @@ module fsm(
 							endcase
 						end
 						7'b0000011: begin	// Load
-							mem_addr = regfile[rs1] + imm;
 							bus_addr <= regfile[rs1] + imm;
-							//if(mem_addr[31:15] == 16'h0001) begin
 							//if(bus_addr[31:15] == 16'h0001) begin
 							if(((regfile[rs1] + imm) >> 16) == 16'h0001) begin
 								dmem_ce <= 1;
@@ -571,12 +568,10 @@ module fsm(
 							end
 						end
 						7'b0100011: begin   //S type
-							mem_addr = regfile[rs1] + imm;
 							bus_addr <= regfile[rs1] + imm;
 							tmp_bus_wdata <= regfile[rs2];
 							// store to data memory
 							//if(bus_addr[31:15] == 16'h0001) begin
-							//if(mem_addr[31:15] == 16'h0001) begin
 							if(((regfile[rs1] + imm) >> 16) == 16'h0001) begin
 								dmem_ce <= 1;
 							end
@@ -632,8 +627,9 @@ module fsm(
 					state <= MEMORY2;
 					case (opcode)
 					7'b0000011: begin  // Load
-						dmem_ce <= 1;
-						dmem_read <= 1;
+						// keep values for dmem_ce and dmem_read from EXECUTE stage, only active if read from data memory (not framebuffer)
+						//dmem_ce <= 1;
+						//dmem_read <= 1;
 					end
 					7'b0100011: begin	// Store
 						// if address in framebuffer range
@@ -641,6 +637,7 @@ module fsm(
 						if(bus_addr[31:16] == 16'h0002) begin
 							fbuf_we <= 1'b1;
 							bus_wdata <= tmp_bus_wdata;
+							$display("Store to framebuffer at addr %h data %h", bus_addr, tmp_bus_wdata);
 						end else begin
 						dmem_ce <= 1;
 						dmem_read <= 0;

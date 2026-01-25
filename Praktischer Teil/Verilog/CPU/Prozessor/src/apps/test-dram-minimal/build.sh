@@ -7,4 +7,4 @@ riscv64-unknown-elf-objcopy -O binary -j .text ${APP}.elf ${APP}.bin
 hexdump -v -e '1/4 "%08x\n"' ${APP}.bin > ${APP}.mi
 cp ${APP}.mi rom.mi
 
-#riscv64-unknown-elf-objdump -M numeric,no-aliases --disassemble-all test-dram-minimal.elf
+riscv64-unknown-elf-objdump -M numeric,no-aliases --disassemble-all ${APP}.elf > ${APP}.disasm

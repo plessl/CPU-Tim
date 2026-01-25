@@ -3,7 +3,15 @@
 module tb_cpu();
 
 // run testbench for cpu.sv
-// iverilog -g2012 -o build/tb.vvp test/tb.sv src/cpu.sv
+/*
+
+must be run in src directory:
+
+iverilog -g2012 -o tb.vvp test/tb.sv cpu.sv
+vvp tb.vvp
+
+
+*/
 
 reg clk;
 reg rst;
@@ -47,6 +55,10 @@ initial begin
     #150;
     rst = 0;
 
+    // Monitor LED controller signals
+    //$monitor("Time=%0t: state=%d row=%2d col=%2d clk=%b latch=%b oe=%b fbuf_re=%b dout_a=%h dout_b=%h", 
+    //         $time, uut.led_inst.con_state, row_addr, col_addr, 
+    //         display_clk, latch, display_oe, uut.led_inst.fbuf_re, dout_a, dout_b);
 
     /*
     $display("x0 (zero): %d (expected 0)", uut.machine.regfile[0]);
@@ -66,8 +78,20 @@ initial begin
 
 end
 
+function string state_name(logic [3:0] state);
+    case(state)
+        4'd0: return "FETCH";
+        4'd1: return "SHIFT1";
+        4'd2: return "SHIFT2";
+        4'd3: return "LATCH_HIGH";
+        4'd4: return "LATCH_LOW";
+        4'd5: return "WAIT";
+        default: return "UNKNOWN";
+    endcase
+endfunction
+
 initial begin
-    #10000000;
+    #1000000;
     $display("ERROR: Test timeout!");
     $finish;
 end
