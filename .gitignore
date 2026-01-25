@@ -1,3 +1,6 @@
 .DS_Store
 impl/
-
+*.elf
+*.bin
+*.hex
+*.mi
