@@ -23,15 +23,15 @@
     autoload_sibling_state_files: None,
     autoreload_files: None,
     waves: Some((
-        source: File("/Users/plessl/Rep/CPU-Tim-Jahresarbeit/Praktischer Teil/Verilog/CPU/Prozessor/src/tb.vcd"),
+        source: File("tb.vcd"),
         format: Vcd,
         active_scope: Some(WaveScope((
             strs: [
                 "tb_cpu",
                 "uut",
-                "fb_inst",
+                "led_inst",
             ],
-            id: Wellen((6)),
+            id: Wellen((8)),
         ))),
         items_tree: (
             items: [
@@ -252,6 +252,12 @@
                     selected: false,
                 ),
                 (
+                    item_ref: (49),
+                    level: 0,
+                    unfolded: true,
+                    selected: false,
+                ),
+                (
                     item_ref: (3),
                     level: 0,
                     unfolded: true,
@@ -259,6 +265,12 @@
                 ),
                 (
                     item_ref: (10),
+                    level: 0,
+                    unfolded: true,
+                    selected: false,
+                ),
+                (
+                    item_ref: (48),
                     level: 0,
                     unfolded: true,
                     selected: false,
@@ -278,29 +290,7 @@
             ],
         ),
         displayed_items: {
-            (6): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                        ],
-                        id: Wellen((4)),
-                    ),
-                    name: "dout_b",
-                    id: Wellen((23)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…uut.dout_b [3:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (35): Variable((
+            (33): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -310,103 +300,12 @@
                         ],
                         id: Wellen((6)),
                     ),
-                    name: "raddr_b",
-                    id: Wellen((49)),
+                    name: "din",
+                    id: Wellen((54)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "raddr_b [31:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (20): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "dmem",
-                        ],
-                        id: Wellen((5)),
-                    ),
-                    name: "ce",
-                    id: Wellen((42)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "ce",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (25): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "dmem",
-                        ],
-                        id: Wellen((5)),
-                    ),
-                    name: "we",
-                    id: Wellen((38)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…dmem.we [3:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (18): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "machine",
-                        ],
-                        id: Wellen((9)),
-                    ),
-                    name: "x3",
-                    id: Wellen((105)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "x3 [31:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (2): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                        ],
-                        id: Wellen((4)),
-                    ),
-                    name: "clk",
-                    id: Wellen((13)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…uut.clk",
+                display_name: "din [31:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -437,7 +336,7 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (12): Variable((
+            (8): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -446,12 +345,12 @@
                         ],
                         id: Wellen((4)),
                     ),
-                    name: "rst",
-                    id: Wellen((14)),
+                    name: "imem_ce",
+                    id: Wellen((20)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "rst",
+                display_name: "imem_ce",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -459,45 +358,66 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (40): Variable((
+            (6): Variable((
                 variable_ref: (
                     path: (
                         strs: [
                             "tb_cpu",
                             "uut",
-                            "fb_inst",
                         ],
-                        id: Wellen((6)),
-                    ),
-                    name: "re",
-                    id: Wellen((53)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…fb_inst.re",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (37): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "fb_inst",
-                        ],
-                        id: Wellen((6)),
+                        id: Wellen((4)),
                     ),
                     name: "dout_b",
-                    id: Wellen((56)),
+                    id: Wellen((23)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…fb_inst.dout_b [3:0]",
+                display_name: "…uut.dout_b [3:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (2): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                        ],
+                        id: Wellen((4)),
+                    ),
+                    name: "clk",
+                    id: Wellen((13)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…uut.clk",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (48): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "led_inst",
+                        ],
+                        id: Wellen((8)),
+                    ),
+                    name: "latch_cntr",
+                    id: Wellen((80)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "latch_cntr [3:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -528,6 +448,29 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
+            (39): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "fb_inst",
+                        ],
+                        id: Wellen((6)),
+                    ),
+                    name: "we",
+                    id: Wellen((51)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…fb_inst.we",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
             (17): Variable((
                 variable_ref: (
                     path: (
@@ -539,7 +482,7 @@
                         id: Wellen((9)),
                     ),
                     name: "x2",
-                    id: Wellen((94)),
+                    id: Wellen((100)),
                 ),
                 color: None,
                 background_color: None,
@@ -551,12 +494,58 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (19): Divider((
+            (49): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "led_inst",
+                        ],
+                        id: Wellen((8)),
+                    ),
+                    name: "oe_cntr",
+                    id: Wellen((81)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "oe_cntr [3:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (46): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "led_inst",
+                        ],
+                        id: Wellen((8)),
+                    ),
+                    name: "col_addr",
+                    id: Wellen((74)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "col_addr [5:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: Some("Unsigned"),
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (32): Divider((
                 color: Some("Yellow"),
                 background_color: Some("Gray"),
-                name: Some("dmem"),
+                name: Some("ledctrl"),
             )),
-            (11): Variable((
+            (5): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -565,12 +554,12 @@
                         ],
                         id: Wellen((4)),
                     ),
-                    name: "instr_addr",
-                    id: Wellen((18)),
+                    name: "dout_a",
+                    id: Wellen((24)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "instr_addr [31:0]",
+                display_name: "…uut.dout_a [3:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -578,7 +567,75 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (36): Variable((
+            (15): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "machine",
+                        ],
+                        id: Wellen((9)),
+                    ),
+                    name: "x1",
+                    id: Wellen((89)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "x1 [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (26): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "machine",
+                        ],
+                        id: Wellen((9)),
+                    ),
+                    name: "opcode",
+                    id: Wellen((131)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "opcode [6:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (10): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                        ],
+                        id: Wellen((4)),
+                    ),
+                    name: "latch",
+                    id: Wellen((17)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "latch",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (37): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -588,12 +645,12 @@
                         ],
                         id: Wellen((6)),
                     ),
-                    name: "raddr_a",
-                    id: Wellen((48)),
+                    name: "dout_b",
+                    id: Wellen((57)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "raddr_a [31:0]",
+                display_name: "…fb_inst.dout_b [3:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -601,7 +658,30 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (42): Variable((
+            (44): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "led_inst",
+                        ],
+                        id: Wellen((8)),
+                    ),
+                    name: "clk",
+                    id: Wellen((65)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…led_inst.clk",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (27): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -611,12 +691,35 @@
                         ],
                         id: Wellen((9)),
                     ),
-                    name: "bus_addr",
-                    id: Wellen((114)),
+                    name: "state",
+                    id: Wellen((138)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…machine.bus_addr [31:0]",
+                display_name: "state [2:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: Some("Unsigned"),
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (47): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "led_inst",
+                        ],
+                        id: Wellen((8)),
+                    ),
+                    name: "con_state",
+                    id: Wellen((75)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "con_state [3:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -624,22 +727,45 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (30): Variable((
+            (45): Variable((
                 variable_ref: (
                     path: (
                         strs: [
                             "tb_cpu",
                             "uut",
-                            "machine",
+                            "led_inst",
                         ],
-                        id: Wellen((9)),
+                        id: Wellen((8)),
                     ),
-                    name: "bus_rdata",
-                    id: Wellen((78)),
+                    name: "row_addr",
+                    id: Wellen((82)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "bus_rdata [31:0]",
+                display_name: "row_addr [4:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: Some("Unsigned"),
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (21): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "dmem",
+                        ],
+                        id: Wellen((5)),
+                    ),
+                    name: "addr",
+                    id: Wellen((43)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "addr [31:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -670,28 +796,33 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (43): Variable((
+            (30): Variable((
                 variable_ref: (
                     path: (
                         strs: [
                             "tb_cpu",
                             "uut",
-                            "led_inst",
+                            "machine",
                         ],
-                        id: Wellen((8)),
+                        id: Wellen((9)),
                     ),
-                    name: "display_clk",
-                    id: Wellen((72)),
+                    name: "bus_rdata",
+                    id: Wellen((84)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "display_clk",
+                display_name: "bus_rdata [31:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
                 height_scaling_factor: None,
                 analog: None,
+            )),
+            (31): Divider((
+                color: Some("Yellow"),
+                background_color: Some("Gray"),
+                name: Some("fbuf"),
             )),
             (1): Variable((
                 variable_ref: (
@@ -715,80 +846,7 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (23): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "dmem",
-                        ],
-                        id: Wellen((5)),
-                    ),
-                    name: "re",
-                    id: Wellen((39)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…dmem.re",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (32): Divider((
-                color: Some("Yellow"),
-                background_color: Some("Gray"),
-                name: Some("ledctrl"),
-            )),
-            (13): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                        ],
-                        id: Wellen((4)),
-                    ),
-                    name: "pc",
-                    id: Wellen((16)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "pc [31:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (27): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "machine",
-                        ],
-                        id: Wellen((9)),
-                    ),
-                    name: "state",
-                    id: Wellen((132)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "state [2:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: Some("Unsigned"),
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (33): Variable((
+            (35): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -798,12 +856,12 @@
                         ],
                         id: Wellen((6)),
                     ),
-                    name: "din",
-                    id: Wellen((54)),
+                    name: "raddr_b",
+                    id: Wellen((49)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "din [31:0]",
+                display_name: "raddr_b [31:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -811,30 +869,7 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (21): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "dmem",
-                        ],
-                        id: Wellen((5)),
-                    ),
-                    name: "addr",
-                    id: Wellen((43)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "addr [31:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (8): Variable((
+            (3): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -843,12 +878,12 @@
                         ],
                         id: Wellen((4)),
                     ),
-                    name: "imem_ce",
-                    id: Wellen((20)),
+                    name: "display_oe",
+                    id: Wellen((28)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "imem_ce",
+                display_name: "display_oe",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -856,58 +891,7 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (15): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "machine",
-                        ],
-                        id: Wellen((9)),
-                    ),
-                    name: "x1",
-                    id: Wellen((83)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "x1 [31:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (31): Divider((
-                color: Some("Yellow"),
-                background_color: Some("Gray"),
-                name: Some("fbuf"),
-            )),
-            (46): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "led_inst",
-                        ],
-                        id: Wellen((8)),
-                    ),
-                    name: "col_addr",
-                    id: Wellen((70)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "col_addr [5:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: Some("Unsigned"),
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (10): Variable((
+            (11): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -916,125 +900,12 @@
                         ],
                         id: Wellen((4)),
                     ),
-                    name: "latch",
-                    id: Wellen((17)),
+                    name: "instr_addr",
+                    id: Wellen((18)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "latch",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (5): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                        ],
-                        id: Wellen((4)),
-                    ),
-                    name: "dout_a",
-                    id: Wellen((24)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…uut.dout_a [3:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (26): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "machine",
-                        ],
-                        id: Wellen((9)),
-                    ),
-                    name: "opcode",
-                    id: Wellen((125)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "opcode [6:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (9): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                        ],
-                        id: Wellen((4)),
-                    ),
-                    name: "instr",
-                    id: Wellen((19)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "instr [31:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: Some("RV32"),
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (44): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "led_inst",
-                        ],
-                        id: Wellen((8)),
-                    ),
-                    name: "clk",
-                    id: Wellen((63)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…led_inst.clk",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (47): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "led_inst",
-                        ],
-                        id: Wellen((8)),
-                    ),
-                    name: "con_state",
-                    id: Wellen((71)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "con_state [3:0]",
+                display_name: "instr_addr [31:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -1065,30 +936,7 @@
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (45): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "tb_cpu",
-                            "uut",
-                            "led_inst",
-                        ],
-                        id: Wellen((8)),
-                    ),
-                    name: "row_addr",
-                    id: Wellen((76)),
-                ),
-                color: None,
-                background_color: None,
-                display_name: "row_addr [4:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: Some("Unsigned"),
-                field_formats: [],
-                height_scaling_factor: None,
-                analog: None,
-            )),
-            (3): Variable((
+            (9): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -1097,20 +945,20 @@
                         ],
                         id: Wellen((4)),
                     ),
-                    name: "display_oe",
-                    id: Wellen((28)),
+                    name: "instr",
+                    id: Wellen((19)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "display_oe",
+                display_name: "instr [31:0]",
                 display_name_type: Unique,
                 manual_name: None,
-                format: None,
+                format: Some("RV32"),
                 field_formats: [],
                 height_scaling_factor: None,
                 analog: None,
             )),
-            (39): Variable((
+            (40): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -1120,12 +968,222 @@
                         ],
                         id: Wellen((6)),
                     ),
-                    name: "we",
-                    id: Wellen((51)),
+                    name: "re",
+                    id: Wellen((53)),
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…fb_inst.we",
+                display_name: "…fb_inst.re",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (18): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "machine",
+                        ],
+                        id: Wellen((9)),
+                    ),
+                    name: "x3",
+                    id: Wellen((111)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "x3 [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (12): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                        ],
+                        id: Wellen((4)),
+                    ),
+                    name: "rst",
+                    id: Wellen((14)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "rst",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (25): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "dmem",
+                        ],
+                        id: Wellen((5)),
+                    ),
+                    name: "we",
+                    id: Wellen((38)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…dmem.we [3:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (43): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "led_inst",
+                        ],
+                        id: Wellen((8)),
+                    ),
+                    name: "display_clk",
+                    id: Wellen((76)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "display_clk",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (42): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "machine",
+                        ],
+                        id: Wellen((9)),
+                    ),
+                    name: "bus_addr",
+                    id: Wellen((120)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…machine.bus_addr [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (20): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "dmem",
+                        ],
+                        id: Wellen((5)),
+                    ),
+                    name: "ce",
+                    id: Wellen((42)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "ce",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (36): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "fb_inst",
+                        ],
+                        id: Wellen((6)),
+                    ),
+                    name: "raddr_a",
+                    id: Wellen((48)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "raddr_a [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (19): Divider((
+                color: Some("Yellow"),
+                background_color: Some("Gray"),
+                name: Some("dmem"),
+            )),
+            (13): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                        ],
+                        id: Wellen((4)),
+                    ),
+                    name: "pc",
+                    id: Wellen((16)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "pc [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+                height_scaling_factor: None,
+                analog: None,
+            )),
+            (23): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "tb_cpu",
+                            "uut",
+                            "dmem",
+                        ],
+                        id: Wellen((5)),
+                    ),
+                    name: "re",
+                    id: Wellen((39)),
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…dmem.re",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
@@ -1134,11 +1192,11 @@
                 analog: None,
             )),
         },
-        display_item_ref_counter: 47,
+        display_item_ref_counter: 49,
         viewports: [
             (
-                curr_left: (0.3227836879791681),
-                curr_right: (0.32483168797899964),
+                curr_left: (0.2977368720086018),
+                curr_right: (0.30183287200826486),
                 target_left: (0.9836159999998928),
                 target_right: (0.10040960000000267),
                 move_start_left: (0.9836159999998928),
@@ -1148,10 +1206,10 @@
             ),
         ],
         cursor: Some((1, [
-            323552,
+            300093,
         ])),
         markers: {},
-        focused_item: Some((31)),
+        focused_item: Some((36)),
         focused_transaction: (None, None),
         default_variable_name_type: Unique,
         scroll_offset: 0.0,

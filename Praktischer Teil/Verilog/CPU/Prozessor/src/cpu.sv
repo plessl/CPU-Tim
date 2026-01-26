@@ -1,3 +1,8 @@
+// Target FGPA: Gowin GW5A-LV25MG121C1/l0
+// TODO: double check FPGA type
+
+
+
 module topmodule (
 	input wire clk,
 	input wire rst,
@@ -12,7 +17,6 @@ module topmodule (
     output logic [3:0] dout_b
 );
 
-wire clk_div;
 wire [31:0] instr_connect;
 wire [31:0] bus_rdata_connect;
 wire imem_ce;
@@ -179,6 +183,7 @@ reg [31:0] rom_mem [4095:0];
 initial begin
 //	$readmemh("rom.mi", rom_mem, 0, 7);
 	$readmemh("rom.mi", rom_mem);
+	
 	$display("ROM loaded: first instruction = %h", rom_mem[0]);
 
 end
@@ -204,6 +209,9 @@ module framebuffer(
 reg [31:0] mem_a [4095:0];
 reg [31:0] mem_b [4095:0];
 
+reg [3:0] dout_a_reg;
+reg [3:0] dout_b_reg;
+
 initial begin
     $readmemb("led.mi", mem_a, 0, 4095);
     $readmemb("led.mi", mem_b, 0, 4095);
@@ -214,21 +222,34 @@ end
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
-        dout_a <= 0;
-        dout_b <= 0;
+        dout_a_reg <= 0;
+        dout_b_reg <= 0;
     end else begin
         if (we) begin
             mem_a[waddr[13:2]] <= din;
             mem_b[waddr[13:2]] <= din;
         end
         if (re) begin
-            dout_a <= mem_a[raddr_a[13:2]][3:0];
-            dout_b <= mem_b[raddr_b[13:2]][3:0];
+            dout_a_reg <= mem_a[raddr_a[13:2]][3:0];
+            dout_b_reg <= mem_b[raddr_b[13:2]][3:0];
         end
     end
 end
 
+always @(posedge clk) begin
+	if(rst) begin
+		dout_a <= 0;
+		dout_b <= 0;
+	end
+	else begin
+		dout_a <= dout_a_reg;
+		dout_b <= dout_b_reg;
+	end
+end
+
 endmodule
+
+// frambuffer has two cycles latency on read, hence we need to wait for one cycle after requesting read (FETCH) 
 
 module LED_Controller #(
     parameter WIDTH = 64,
@@ -253,53 +274,72 @@ reg [5:0] col_counter;
 typedef enum reg [3:0]
 {   
     FETCH = 4'd0,
-    SHIFT1 = 4'd1,
-    SHIFT2 = 4'd2,
-    LATCH_HIGH = 4'd3,
-    LATCH_LOW = 4'd4,
-    WAIT = 4'd5
+	DATAWAIT = 4'd1,
+    SHIFT1 = 4'd2,
+    SHIFT2 = 4'd3,
+    LATCH = 4'd4,
+    OE = 4'd5,
+    WAIT = 4'd6
     
 } controller_statetype;
 
 controller_statetype con_state;
 
-localparam WAIT_CYCLES  =  16'd8;
+localparam WAIT_CYCLES  =  16'd5;
+localparam LATCH_CYCLES = 4'd6;
+localparam OE_CYCLES = 4'd6;
 
+logic[3:0] latch_cntr;
+logic[3:0] oe_cntr;
 logic[15:0] wait_cntr;
 
 always @(posedge clk or posedge rst) begin
-    if(rst)begin
+    if(rst) begin
         con_state <= FETCH;
         display_clk <= 1'b0;
         row_addr <= 0;
-        col_addr <= 0;
+        col_addr <= '0;
         display_oe <= 1'b1;
         fbuf_re <= 1'b0;
         latch <= 1'b0;
         wait_cntr <= '0;
-        end
-        else begin
+    end
+    else begin
         case (con_state)
+
             FETCH: begin
                 display_clk <= 1'b0;
                 col_addr <= col_addr;
                 row_addr <= row_addr;
-                con_state <= SHIFT1;
+                con_state <= DATAWAIT;
                 fbuf_re <= 1'b1;
                 display_oe <= 1'b1;
                 latch <= 1'b0;
             end
+
+			DATAWAIT: begin
+				display_clk <= 1'b0;
+				col_addr <= col_addr;
+				row_addr <= row_addr;
+				con_state <= SHIFT1;
+				fbuf_re <= 1'b0;
+				display_oe <= 1'b1;
+				latch <= 1'b0;
+			end
+
             SHIFT1: begin
                 display_clk <= 1'b1;
                 display_oe <= 1'b1;
                 fbuf_re <= 1'b1;
                 con_state <= SHIFT2;
             end
+
             SHIFT2: begin           
                 display_clk <= 1'b0;
                 fbuf_re <= 1'b0;
                 if(col_addr == COLUMNS - 1) begin
-                    con_state <= LATCH_HIGH;
+                    con_state <= LATCH;
+					latch_cntr <= LATCH_CYCLES;
                     display_oe <= 1'b1;
                     col_addr <= '0;
                 end else begin
@@ -308,27 +348,45 @@ always @(posedge clk or posedge rst) begin
                     display_oe <= 1'b1;
                 end
             end
-            LATCH_HIGH: begin
+
+            LATCH: begin
                 latch <= 1'b1;
                 display_clk <= 1'b0;
                 display_oe <= 1'b1;
-                con_state <= LATCH_LOW;
+				if(latch_cntr > 1) begin
+					latch_cntr <= latch_cntr - 1'b1;
+					con_state <= LATCH;
+				end else begin
+					oe_cntr <= OE_CYCLES;
+	                con_state <= OE;
+				end
             end
-            LATCH_LOW: begin
+
+            OE: begin
                 latch <= 1'b0;
                 display_clk <= 1'b0;
-                display_oe <= 1'b1;
-                if(row_addr == ROWS - 1) begin
-                    row_addr <= '0;
-                end else begin
-                    row_addr <= row_addr + 1'b1;
-                end
-                con_state <= WAIT;
+                display_oe <= 1'b0;
+
+				if(oe_cntr > 1) begin
+					oe_cntr <= oe_cntr - 1'b1;
+					con_state <= OE;
+				end else begin
+					con_state <= WAIT;
+				end
+
+				//if(row_addr == ROWS - 1) begin
+                //    row_addr <= '0;
+                //end else begin
+                //    row_addr <= row_addr + 1'b1;
+                //end
+                //con_state <= WAIT;
+
             end
+
             WAIT: begin
                 display_clk <= 1'b0;
                 latch <= 1'b0;
-                display_oe <= 1'b0;
+                display_oe <= 1'b1;
                 if(wait_cntr < WAIT_CYCLES - 1) begin
                     wait_cntr <= wait_cntr + 1'b1;
                     con_state <= WAIT;
@@ -336,8 +394,16 @@ always @(posedge clk or posedge rst) begin
                     wait_cntr <= '0;
                     display_oe <= 1'b1;
                     con_state <= FETCH;
+
+					if(row_addr == ROWS - 1) begin
+                    	row_addr <= '0;
+                	end else begin
+                    	row_addr <= row_addr + 1'b1;
+                	end
+                
                 end
             end
+
         endcase
     end
 end
