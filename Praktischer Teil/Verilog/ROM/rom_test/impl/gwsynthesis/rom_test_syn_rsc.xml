@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Module name="topmodule" Register="9" Lut="5" T_Register="9(9)" T_Lut="10(5)">
- <SubModule name="rom" Lut="5" T_Lut="5(5)"/>
-</Module>
