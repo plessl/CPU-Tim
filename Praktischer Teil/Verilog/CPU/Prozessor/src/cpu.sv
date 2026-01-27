@@ -285,13 +285,13 @@ typedef enum reg [3:0]
 
 controller_statetype con_state;
 
-localparam WAIT_CYCLES  =  16'd5;
-localparam LATCH_CYCLES = 4'd6;
-localparam OE_CYCLES = 4'd6;
+localparam WAIT_CYCLES  =  6;
+localparam LATCH_CYCLES = 4;
+localparam OE_CYCLES = 8;
 
-logic[3:0] latch_cntr;
-logic[3:0] oe_cntr;
-logic[15:0] wait_cntr;
+logic[7:0] latch_cntr;
+logic[7:0] oe_cntr;
+logic[7:0] wait_cntr;
 
 always @(posedge clk or posedge rst) begin
     if(rst) begin
