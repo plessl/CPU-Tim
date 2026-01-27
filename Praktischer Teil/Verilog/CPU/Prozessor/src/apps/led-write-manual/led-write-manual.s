@@ -23,12 +23,23 @@ li x3, COL_RED       # Load immediate value for red LED bit mask
 li x4, COL_GREEN       # Load immediate value for red LED bit mask
 li x5, COL_BLUE       # Load immediate value for red LED bit mask
 
-sw x4, 0(x1)
-sw x4, 8(x1)
-sw x4, 12(x1)
-sw x3, 1024(x1)  # 4096*4 -4
+.equ ROW, 16
+.equ COL, 8
 
-# sw x4, 1(x1)  # 2
-# sw x3, 3(x1)  # 4
+li x10, (ROW*64*4)+COL*4   # Calculate offset for pixel at (ROW, COL)
+add x10, x1, x10
 
-# j _start               # Infinite loop
+sw x3, 0(x10)
+
+# sw x3, 0(x1)
+# sw x4, 4(x1)
+# sw x4, 8(x1)
+# sw x3, 12(x1)
+
+# sw x5, 0(x10)
+# sw x3, 4(x10)
+# sw x3, 8(x10)
+# sw x5, 12(x10)
+
+
+j _start               # Infinite loop
