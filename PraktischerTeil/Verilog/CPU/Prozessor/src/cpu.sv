@@ -126,8 +126,7 @@ wire [31:0] index = addr >> 2;
 
 // readmem (index of first word, index of last word; both are zero-indexed)
 initial begin
-	$readmemh("ram.mi", ram_mem, 0, 255);
-//	$readmemh("ram.mi", ram_mem);
+	$readmemh("ram.mi", ram_mem);
 end
 
 always @(posedge clk) begin
@@ -451,6 +450,8 @@ module fsm(
 	reg [31:0] tmp_rd;
 	reg [4:0] shift_amt;
 	reg [31:0] tmp_bus_wdata;
+
+	reg set_rd_flag;
 	
 	integer i;
 	integer d;
@@ -555,6 +556,7 @@ module fsm(
 				EXECUTE: begin
 					case (opcode)
 						7'b0110011: begin        //R type
+							set_rd_flag <= 1;
 							shift_amt <= regfile[rs2][4:0];
 							case (funct3)
 								3'b000: begin
@@ -596,6 +598,7 @@ module fsm(
 						end
 
 						7'b0010011: begin       //I type arithmetic
+							set_rd_flag <= 1;
 							case (funct3)
 								3'b000:
 									tmp_rd <= regfile[rs1] + imm;    //addi
@@ -626,6 +629,7 @@ module fsm(
 							endcase
 						end
 						7'b0000011: begin	// Load
+							set_rd_flag <= 0;
 							bus_addr <= regfile[rs1] + imm;
 							//if(bus_addr[31:15] == 16'h0001) begin
 							if(((regfile[rs1] + imm) >> 16) == 16'h0001) begin
@@ -634,6 +638,7 @@ module fsm(
 							end
 						end
 						7'b0100011: begin   //S type
+							set_rd_flag <= 0;
 							bus_addr <= regfile[rs1] + imm;
 							tmp_bus_wdata <= regfile[rs2];
 							// store to data memory
@@ -649,6 +654,7 @@ module fsm(
 						end
 
 						7'b1100011: begin   //B type
+							set_rd_flag <= 0;
 							pc_next <= pc + 4;
 							case (funct3)
 								3'b000:
@@ -669,19 +675,23 @@ module fsm(
 						end
 
 						7'b1101111: begin       //jal
+							set_rd_flag <= 1;
 							tmp_rd <= pc + 4;
 							pc_next <= (pc + imm)& ~1;
 						end
 						7'b1100111: begin       //jalr
+							set_rd_flag <= 1;
 							if(funct3 == 3'b000) begin
 								tmp_rd <= pc + 4;
 								pc_next <= (regfile[rs1] + imm) & ~1;
 							end
 						end
-						7'b0110111: begin       //lui
+						7'b0110111: begin      //lui
+							set_rd_flag <= 1;
 							tmp_rd <= imm;
 						end
 						7'b0010111: begin
+							set_rd_flag <= 1;
 							tmp_rd <= pc + imm;    //auipc
 						end
 						default:
@@ -762,7 +772,8 @@ module fsm(
 				MEMORY2: begin
 					state <= WRITEBACK;
 					case(opcode) 
-						7'b0000011: begin
+						7'b0000011: begin  // Load
+						set_rd_flag <= 1;
 						case (funct3)
 							3'b000: begin     //lb
 								case (bus_addr[1:0])
@@ -827,7 +838,11 @@ module fsm(
 					bus_wdata <= 0;
 					bus_addr <= 0;
 					pc <= pc_next;
-					if(rd != 0) regfile[rd] <= tmp_rd;
+					if(set_rd_flag) begin
+						if(rd != 0) regfile[rd] <= tmp_rd;
+						set_rd_flag <= 0;
+					end
+					else
 					state <= FETCH;
 					`ifndef SYNTHESIS
 					show_instruction(instr);
