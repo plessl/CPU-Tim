@@ -2,30 +2,40 @@
 // TODO: double check FPGA type
 
 module topmodule (
-	input wire clk,
-	input wire rst,
-	output reg[6:0] pc_trace,
-	output reg clk_trace,
-	
-	//Display
+	input  logic       clk,
+	input  logic       rst,
+	output logic [6:0] pc_trace,
+	output logic       clk_trace,
+
 	output logic [4:0] row_addr,
     output logic [5:0] col_addr,
     output logic display_oe,
     output logic latch,
     output logic display_clk,
     output logic [3:0] dout_a,
-    output logic [3:0] dout_b
+    output logic [3:0] dout_b,
 	
 	//SPI Controller	
 	output logic spi_clk,
 	output logic cs_n,
 	output logic mosi,
-	input  logic miso
+	input  logic miso,
+
+	//SPI Controller debug/observation signals
+	output logic ctrl_miso,
+	output logic ctrl_mosi,
+	output logic ctrl_spi_clk,
+	output logic ctrl_cs_n,
+	output logic ctrl_clk
 
 );
 
+wire [31:0] dmem_rdata_connect;
+wire [31:0] spi_rdata_connect;
 wire [31:0] instr_connect;
 wire [31:0] bus_rdata_connect;
+wire [31:0] spi_rdata;
+wire spi_re;
 wire imem_ce;
 wire dmem_ce;
 wire fbuf_re;
@@ -37,12 +47,13 @@ wire [31:0] bus_addr;
 wire [31:0] bus_wdata;
 wire [31:0] instr_addr;
 wire [31:0] instr;
-logic ctrl_miso;
-logic ctrl_mosi;
-logic ctrl_spi_clk;
-logic ctrl_cs_n;
-logic ctrl_clk;
 reg spi_ce;
+
+
+assign bus_rdata_connect =
+    (((bus_addr >> 16) == 16'h0003) && spi_re) ? spi_rdata_connect :
+    (((bus_addr >> 16) == 16'h0001)) ? dmem_rdata_connect : 32'b0;
+
 
 
 ram_module dmem (
@@ -53,7 +64,7 @@ ram_module dmem (
 		.rst(rst),
 		.addr(bus_addr),
 		.data_in(bus_wdata),
-		.data_out(bus_rdata_connect)
+		.data_out(dmem_rdata_connect)
 );
 
 rom_module imem (
@@ -83,7 +94,8 @@ fsm machine(
 		.dmem_we(dmem_we),
 		.bus_wdata(bus_wdata),
         .fbuf_we(fbuf_we),
-		.spi_ce(spi_ce)
+		.spi_ce(spi_ce),
+		.spi_re(spi_re)
 );
 
 framebuffer fb_inst(
@@ -126,7 +138,8 @@ spi_controller spi_inst (
     .mosi(mosi),
     .miso(miso),
 	.ce(spi_ce),
-	.button_states(bus_rdata_connect),
+	.spi_rdata(spi_rdata_connect),
+	.re(spi_re),
 
     .ctrl_miso(ctrl_miso),
     .ctrl_mosi(ctrl_mosi),
@@ -145,8 +158,9 @@ module spi_controller (
     output logic        mosi,    
     input  logic        miso,
 	input  logic  		ce,   
-    output logic[31:0]	button_states,
+	input  logic  		re,
 
+    output logic[31:0] spi_rdata,
     output logic ctrl_miso,
     output logic ctrl_mosi,
     output logic ctrl_spi_clk,
@@ -158,8 +172,8 @@ module spi_controller (
 reg miso_reg;
 
 always @(posedge clk) begin
-	if(ce)begin
-		button_states <= {16'b0, miso_reg[15:0]}
+	if(ce && re) begin
+		spi_rdata <= {16'b0, recv_msg[1], recv_msg[0]};
 	end
 end
 
@@ -219,7 +233,6 @@ always @(posedge clk or posedge rst) begin
         cs_n <= 1;
         spi_clk <= 1;
         state <= IDLE;
-        btn_valid <= 0;
         bit_cntr <= '0;
         word_cntr <= '0;
         wait_cntr <= '0;
@@ -231,7 +244,6 @@ always @(posedge clk or posedge rst) begin
             mosi <= '0;
             cs_n <= 1;
             spi_clk <= 1;
-            btn_valid <= 0;
             bit_cntr <= '0;
             word_cntr <= '0;
             wait_cntr <= '0;
@@ -301,15 +313,15 @@ endmodule
 
 // Single-port synchronous block RAM with byte-enables for writes
 // read has one cycle latency, compare with SUG949E p.67
-module ram_module(
-	input wire clk,
-	input wire re,
-	input wire[3:0] we,
-	input wire ce,
-	input wire rst,
-	input wire[31:0] addr,
-	input wire[31:0] data_in,
-	output reg[31:0] data_out
+module ram_module (
+	input  logic        clk,
+	input  logic        re,
+	input  logic [3:0]  we,
+	input  logic        ce,
+	input  logic        rst,
+	input  logic [31:0] addr,
+	input  logic [31:0] data_in,
+	output logic [31:0] data_out
 );
 
 reg [31:0] ram_mem [4095:0];
@@ -359,13 +371,13 @@ end
 endmodule
 
 
-module rom_module(
-	input wire clk,
-	input wire ce,
-	input wire oce,
-	input wire rst,
-	input wire[31:0] addr,
-	output wire[31:0] dout
+module rom_module (
+	input  logic        clk,
+	input  logic        ce,
+	input  logic        oce,
+	input  logic        rst,
+	input  logic [31:0] addr,
+	output logic [31:0] dout
 );
 
 reg [31:0] rom_mem [4095:0];
@@ -449,8 +461,8 @@ module LED_Controller #(
     parameter COLUMNS = 64
 )
 (
-    input wire clk,
-    input wire rst,
+    input  logic clk,
+    input  logic rst,
     output logic[4:0] row_addr,
     output logic[5:0] col_addr,
     output logic display_oe,
@@ -600,26 +612,24 @@ always @(posedge clk or posedge rst) begin
 end
 endmodule
 
-module fsm(
-	// general
-	input wire clk,
-	input wire rst,
-	
-	// instruction MEMORY
-	output reg imem_ce,    
-	output reg[31:0] instr_addr,
-	input wire[31:0] instr,
-	output reg [31:0] pc,
-	
-	// data MEMORY
-	output reg[31:0] bus_addr,
-	input wire[31:0] bus_rdata,
-	output reg dmem_ce,
-	output reg dmem_read,
-	output reg fbuf_we, 
-	output reg[3:0] dmem_we,
-	output reg[31:0] bus_wdata,
-	output logic spi_ce
+module fsm (
+	input  logic        clk,
+	input  logic        rst,
+
+	output logic        imem_ce,
+	output logic [31:0] instr_addr,
+	input  logic [31:0] instr,
+	output logic [31:0] pc,
+
+	output logic [31:0] bus_addr,
+	input  logic [31:0] bus_rdata,
+	output logic        dmem_ce,
+	output logic        dmem_read,
+	output logic        fbuf_we,
+	output logic [3:0]  dmem_we,
+	output logic [31:0] bus_wdata,
+	output logic        spi_ce,
+	output logic        spi_re
 );
 
 	typedef enum reg[2:0]{
@@ -696,6 +706,8 @@ module fsm(
 			dmem_we <= 4'b0000;
 			dmem_ce <= 0;
 			fbuf_we <= 0;
+			spi_ce <= 0;
+			spi_re <= 0;
 			imem_ce <= 1;
 			bus_addr <= 0;
 			pc_next <= 0;
@@ -707,6 +719,8 @@ module fsm(
 			dmem_ce <= 0;
 			dmem_read <= 0;
 			dmem_we <= 4'b0000;
+			spi_ce <= 0;
+			spi_re <= 0;
 			imem_ce <= 1;
 
 			case (state)
@@ -831,6 +845,7 @@ module fsm(
 							end
 							if(((regfile[rs1] + imm) >> 16) == 16'h0003)begin
 								spi_ce <= 1'b1;
+								spi_re <= 1'b1;
 							end
 						end
 						7'b0100011: begin   //S type
@@ -970,6 +985,11 @@ module fsm(
 					case(opcode) 
 						7'b0000011: begin  // Load
 						set_rd_flag <= 1;
+						if(((regfile[rs1] + imm) >> 16) == 16'h0003)begin
+							spi_ce <= 1'b0;
+							spi_re <= 1'b0;
+							tmp_rd <= bus_rdata;
+						end else begin
 						case (funct3)
 							3'b000: begin     //lb
 								case (bus_addr[1:0])
@@ -1024,6 +1044,7 @@ module fsm(
 							default:
 								tmp_rd <= 32'b0;
 						endcase
+						end
 					end
 					endcase
 				end
@@ -1031,6 +1052,8 @@ module fsm(
 					dmem_ce <= 0;
 					dmem_we <= 4'b0000;
 					dmem_read <= 0;
+					spi_ce <= 0;
+					spi_re <= 0;
 					bus_wdata <= 0;
 					bus_addr <= 0;
 					pc <= pc_next;
@@ -1221,3 +1244,5 @@ task show_instruction;
 	endtask
 `endif
 endmodule
+
+`default_nettype wire

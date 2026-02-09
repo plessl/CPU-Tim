@@ -11,6 +11,21 @@ char game_over;
 char game_win;
 
 volatile unsigned int * const fb_base = (volatile unsigned int *) 0x00020000;
+volatile unsigned int * const spi_base = (volatile unsigned int *) 0x00030000;
+
+// Key mapping: L D R U □ X O △ R1 L1 R2 L2 (low active = 0 when pressed)
+#define BUTTON_L    0x8000  // Left (0x7FFF when pressed)
+#define BUTTON_D    0x4000  // Down (0xBFFF when pressed)
+#define BUTTON_R    0x2000  // Right (0xDFFF when pressed)
+#define BUTTON_U    0x1000  // Up (0xEFFF when pressed)
+#define BUTTON_SQUARE 0x0800 // □ Start (0xF7FF when pressed)
+#define BUTTON_X    0x0400  // X
+#define BUTTON_O    0x0200  // O
+#define BUTTON_TRIANGLE 0x0100 // △
+
+unsigned int read_buttons() {
+    return *spi_base;
+}
 
 void fb_write(unsigned row, unsigned col, unsigned r, unsigned g, unsigned b) {
     volatile unsigned int *fb = (volatile unsigned int *)fb_base;
@@ -51,7 +66,7 @@ unsigned lfsr16(unsigned *reg) {
 }
 
 void place_food(){
-    unsigned seed = 0xACE1u;
+    unsigned seed = 0xAFFE;
     int food_x, food_y;
     do 
     {
@@ -63,17 +78,18 @@ void place_food(){
 }
 
 void move_snake(int direction){
+    // Calculate new position based on direction
     if(direction == up){
-        x_n +=1;
+        x_n = x - 1;  // Move up (decrease row)
     }
     if(direction == down){
-        x_n-=1;
+        x_n = x + 1;  // Move down (increase row)
     }
     if(direction == left){
-        y_n-=1;
+        y_n = y - 1;  // Move left (decrease column)
     }
     if(direction == right){
-        y_n+=1;
+        y_n = y + 1;  // Move right (increase column)
     }
 
     if(x_n < 0 || x_n >= DISPLAY_HEIGHT || y_n < 0 || y_n >= DISPLAY_WIDTH || board[x_n][y_n] == snake){
@@ -82,20 +98,20 @@ void move_snake(int direction){
     }
 
     for(int i = 0; i< 64; i++){
-        for(int j = 0; j < 0; j++){
+        for(int j = 0; j < DISPLAY_WIDTH; j++){
             if(board[i][j]==tail){
                 board[i][j] = empty;
-                //add new tail
-                if(direction_n == up){
+                //add new tail with bounds checking
+                if(direction == up && i+1 < DISPLAY_HEIGHT){
                     board[i+1][j] = tail;
                 }
-                if(direction_n == down){
+                if(direction == down && i-1 >= 0){
                     board[i-1][j] = tail;   
                 }
-                if(direction_n == left){
+                if(direction == left && j+1 < DISPLAY_WIDTH){
                     board[i][j+1] = tail;
                 }
-                if(direction_n == right){
+                if(direction == right && j-1 >= 0){
                     board[i][j-1] = tail;
                 }
             }
@@ -105,28 +121,35 @@ void move_snake(int direction){
             if(board[i][j] == food && i == x_n && j == y_n){
                 place_food();
                 score++;
-                //grow snake
-                if(direction_n == up){
+                //grow snake with bounds checking
+                if(direction == up && i+1 < DISPLAY_HEIGHT){
                     board[i+1][j] = head;
                     board[i][j] = snake;
+                    x = i; y = j;
                 }
-                if(direction_n == down){
+                if(direction == down && i-1 >= 0){
                     board[i-1][j] = head;   
                     board[i][j] = snake;
+                    x = i; y = j;
                 }
-                if(direction_n == left){
+                if(direction == left && j+1 < DISPLAY_WIDTH){
                     board[i][j+1] = head;
                     board[i][j] = snake;
+                    x = i; y = j;
                 }
-                if(direction_n == right){
+                if(direction == right && j-1 >= 0){
                     board[i][j-1] = head;
                     board[i][j] = snake;
+                    x = i; y = j;
                 }
             }
         }
     }
 
     board[x_n][y_n] = head;
+    // Update current position for next move
+    x = x_n;
+    y = y_n;
 }
 
 void write_board(){
@@ -197,8 +220,10 @@ void check_win(){
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 void delay(){
+    volatile unsigned int *delay_reg = (volatile unsigned int *)0x78000000;
     for(int i = 0; i < 100000; i++){
-        asm volatile("addi x0, x0, 0");
+        volatile unsigned int dummy = *delay_reg;
+        (void)dummy;
     }
 }
 #pragma GCC pop_options
@@ -225,8 +250,35 @@ int main(){
     place_food();
 
     while(!game_over && !game_win){
+        // Read buttons and update direction
+        unsigned int buttons = read_buttons();
+        // Prevent 180-degree turns with simple debouncing
+        static unsigned int last_buttons = 0;
+        static int last_direction = right;
+        
+        if(buttons != last_buttons){
+            if((buttons & BUTTON_U) && direction != down) {
+                direction = up;
+                last_direction = up;
+            }
+            else if((buttons & BUTTON_D) && direction != up) {
+                direction = down;
+                last_direction = down;
+            }
+            else if((buttons & BUTTON_L) && direction != right) {
+                direction = left;
+                last_direction = left;
+            }
+            else if((buttons & BUTTON_R) && direction != left) {
+                direction = right;
+                last_direction = right;
+            }
+            last_buttons = buttons;
+        }
+        
+        // Use last processed direction for movement
+        direction_n = last_direction;
         move_snake(direction);
-        direction_n = direction;
         write_board();
         check_win();
         delay();
@@ -234,14 +286,20 @@ int main(){
 
     if(game_over){
         //display game over screen
+        while(1){
         for(int i = 0; i< DISPLAY_HEIGHT; i++){
             for(int j = 0; j < DISPLAY_WIDTH; j++){
                 fb_write(i, j, 0, 0, 0);
             }
         }
+    }
         //display score in center
         draw_score(DISPLAY_HEIGHT/2-2, DISPLAY_WIDTH/2 - 8, score);
-        while(1); // stop here
+        //wait for start button to restart
+        while(!(read_buttons() & BUTTON_SQUARE));
+        //debounce - wait for button release
+        while(read_buttons() & BUTTON_SQUARE);
+        main(); // restart game
     }
     if(game_win){
         //display win screen
@@ -252,6 +310,10 @@ int main(){
         }
         //display score in center
         draw_score(DISPLAY_HEIGHT/2-2, DISPLAY_WIDTH/2 - 8, score);
-        while(1); // stop here
+        //wait for start button to restart
+        while(!(read_buttons() & BUTTON_SQUARE));
+        //debounce - wait for button release
+        while(read_buttons() & BUTTON_SQUARE);
+        main(); // restart game
     }
 }
