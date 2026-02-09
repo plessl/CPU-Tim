@@ -1,0 +1,156 @@
+module spi_controller (
+    input  logic        clk,   
+    input  logic        rst, 
+    output logic        spi_clk,
+    output logic        cs_n,
+    output logic        mosi,    
+    input  logic        miso,   
+    output logic        btn_valid,
+
+    output logic ctrl_miso,
+    output logic ctrl_mosi,
+    output logic ctrl_spi_clk,
+    output logic ctrl_cs_n,
+    output logic ctrl_clk
+
+);
+
+reg miso_reg;
+
+always @(posedge clk) begin
+    miso_reg <= miso;
+    ctrl_spi_clk <= spi_clk;
+    ctrl_mosi    <= mosi;
+    ctrl_cs_n    <= cs_n;
+    ctrl_clk     <= clk;
+end
+
+
+assign ctrl_miso = miso_reg;
+
+/*
+`ifndef SYNTHESIS
+    localparam wait_cntr_max = 16;
+    localparam idle_delay = 100;
+    localparam word_gap_cycles = 32;
+`else*/
+    localparam wait_cntr_max = 100; //100
+    localparam word_gap_cycles = 1000; //1000
+    localparam idle_delay = 5000; //5000
+//`endif
+
+localparam word_cntr_max = 4;
+localparam bit_cntr_max = 7;
+logic [2:0] bit_cntr;
+logic [3:0] word_cntr; 
+logic [$clog2(word_gap_cycles+1)-1:0] wait_cntr;
+logic [$clog2(idle_delay+1)-1:0] idle_cntr;
+
+logic [7:0] send_msg [5:0];
+logic [7:0] recv_msg [5:0];
+
+initial begin
+    send_msg[5] = 8'h00;
+    send_msg[4] = 8'h00;
+    send_msg[3] = 8'h00;
+    send_msg[2] = 8'h00;
+    send_msg[1] = 8'h42;
+    send_msg[0] = 8'h01;
+end
+
+reg [7:0] btn_states;
+
+typedef enum logic [2:0] {
+    IDLE = 3'd1,
+    PREPARE = 3'd2,
+    SEND = 3'd3,
+    WAIT = 3'd4
+} state_t;
+
+state_t state;
+
+always @(posedge clk or posedge rst) begin
+    if(rst)begin
+        mosi <= '0;
+        cs_n <= 1;
+        spi_clk <= 1;
+        state <= IDLE;
+        btn_valid <= 0;
+        bit_cntr <= '0;
+        word_cntr <= '0;
+        wait_cntr <= '0;
+        idle_cntr <= '0;
+    end
+    else begin
+    case (state)
+        IDLE: begin
+            mosi <= '0;
+            cs_n <= 1;
+            spi_clk <= 1;
+            btn_valid <= 0;
+            bit_cntr <= '0;
+            word_cntr <= '0;
+            wait_cntr <= '0;
+
+            if (idle_cntr < idle_delay) begin
+                idle_cntr <= idle_cntr + 1'b1;
+            end else begin
+                idle_cntr <= '0;
+                cs_n <= 0;
+                state <= PREPARE;
+            end
+        end
+
+        PREPARE: begin
+            spi_clk <= 0;
+            cs_n <= 0;
+            mosi <= send_msg[word_cntr][bit_cntr];
+            if (wait_cntr < wait_cntr_max) begin
+                wait_cntr <= wait_cntr + 1'b1;
+            end else begin
+                wait_cntr <= '0;
+                state <= SEND;
+            end
+        end
+        SEND: begin 
+            spi_clk <= 1;
+            cs_n <= 0;
+            if (wait_cntr == wait_cntr_max - 1) begin
+                recv_msg[word_cntr][bit_cntr] <= miso;
+            end
+            if(wait_cntr < wait_cntr_max) begin
+                wait_cntr <= wait_cntr + 1'b1;
+            end 
+            else begin
+                wait_cntr <= 0;
+                if(bit_cntr < bit_cntr_max) begin
+                    bit_cntr <= bit_cntr + 1'b1;
+                    state <= PREPARE;
+                end else begin
+                    bit_cntr <= 0;
+                    state <= WAIT;
+                end
+            end 
+        end
+        WAIT: begin
+            spi_clk <= 1;
+            if(wait_cntr < word_gap_cycles)begin
+                wait_cntr <= wait_cntr + 1'b1;
+            end else begin
+                wait_cntr <= 0;
+                if(word_cntr < word_cntr_max) begin
+                    state <= PREPARE;
+                    word_cntr <= word_cntr + 1'b1;
+                end else begin
+                    state <= IDLE;
+                    word_cntr <= 0;
+                end
+            end
+        end
+        default: 
+            $display("ERROR********");
+    endcase
+    end
+end
+
+endmodule

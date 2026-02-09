@@ -193,9 +193,16 @@ void check_win(){
     game_win = 1;
 }
 
+//prevent optimization for this function, otherwise the game will run too fast to be playable
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 void delay(){
-    for(volatile int i = 0; i < 100000000; i++);
+    for(int i = 0; i < 100000; i++){
+        asm volatile("addi x0, x0, 0");
+    }
 }
+#pragma GCC pop_options
+
 
 int main(){
     //init board
@@ -203,7 +210,8 @@ int main(){
         for(int j = 0; j < DISPLAY_WIDTH; j++){
             board[i][j] = empty;
         }
-    }
+    }    
+    write_board();
 
     //init snake
     x_n = 0;
@@ -220,8 +228,8 @@ int main(){
         move_snake(direction);
         direction_n = direction;
         write_board();
-        delay();
         check_win();
+        delay();
     }
 
     if(game_over){
