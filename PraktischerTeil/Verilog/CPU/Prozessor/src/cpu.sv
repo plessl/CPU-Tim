@@ -1,9 +1,11 @@
 // Target FGPA: Gowin GW5A-LV25MG121C1/l0
+// TODO: double check FPGA type
 
 module topmodule (
 	input  logic       clk,
 	input  logic       rst,
-	output logic [6:0] trace,
+	output logic [6:0] pc_trace,
+	output logic       clk_trace,
 
 	output logic [4:0] row_addr,
     output logic [5:0] col_addr,
@@ -12,28 +14,29 @@ module topmodule (
     output logic display_clk,
     output logic [3:0] dout_a,
     output logic [3:0] dout_b,
-    input  logic [3:0] buttons,
 	
 	//SPI Controller	
 	output logic spi_clk,
 	output logic cs_n,
 	output logic mosi,
 	input  logic miso,
+
 	//SPI Controller debug/observation signals
 	output logic ctrl_miso,
 	output logic ctrl_mosi,
 	output logic ctrl_spi_clk,
-	output logic ctrl_cs_n
+	output logic ctrl_cs_n,
+	output logic ctrl_clk,
+
+	output logic button_up,
+	output logic button_down,
+	output logic button_left,
+	output logic button_right
 
 );
 
-assign trace[6] = spi_ce;
-assign trace[5] = spi_re;
-
-wire [31:0] dmem_rdata_connect;
-wire [31:0] spi_rdata_connect;
 wire [31:0] instr_connect;
-// wire [31:0] bus_rdata_connect;
+wire [15:0] controller_state;
 wire spi_re;
 wire imem_ce;
 wire dmem_ce;
@@ -42,12 +45,17 @@ wire fbuf_we;
 wire [31:0] pc;
 wire dmem_read;
 wire[3:0] dmem_we;
+wire [31:0] dmem_rdata;
 wire [31:0] bus_addr;
 wire [31:0] bus_wdata;
 wire [31:0] instr_addr;
 wire [31:0] instr;
 reg spi_ce;
-wire spi_busy;
+
+assign button_left = ~controller_state[15];
+assign button_down = ~controller_state[11];
+assign button_right = ~controller_state[14];
+assign button_up = ~controller_state[10];
 
 
 ram_module dmem (
@@ -58,7 +66,7 @@ ram_module dmem (
 		.rst(rst),
 		.addr(bus_addr),
 		.data_in(bus_wdata),
-		.data_out(dmem_rdata_connect)
+		.data_out(dmem_rdata)
 );
 
 rom_module imem (
@@ -82,17 +90,17 @@ fsm machine(
 
 		//data memory
 		.bus_addr(bus_addr),
-		.bus_rdata_dmem(dmem_rdata_connect),
-		.bus_rdata_spi(spi_rdata_connect),
+		.bus_rdata(dmem_rdata),
 		.dmem_ce(dmem_ce),
 		.dmem_read(dmem_read),
 		.dmem_we(dmem_we),
 		.bus_wdata(bus_wdata),
         .fbuf_we(fbuf_we),
-		.spi_busy(spi_busy),
+
+		// SPI controller
 		.spi_ce(spi_ce),
 		.spi_re(spi_re),
-		.x5_spi_check(trace)
+		.controller_state(controller_state)
 );
 
 framebuffer fb_inst(
@@ -110,12 +118,11 @@ framebuffer fb_inst(
     	.dout_b(dout_b)
 );
 
-
-/*
 always @(posedge clk) begin
-	trace <= spi_rdata_connect[15:8];
+	pc_trace <= pc[6:0];
+	clk_trace <= ~clk_trace;
 end
-*/
+
 
 LED_Controller led_inst(
         .clk(clk),
@@ -135,14 +142,13 @@ spi_controller spi_inst (
     .cs_n(cs_n),
     .mosi(mosi),
     .miso(miso),
-	.ce(spi_ce),
-	.spi_rdata(spi_rdata_connect),
-	.re(spi_re),
-	.busy(spi_busy),
+	.controller_state(controller_state),
+
     .ctrl_miso(ctrl_miso),
     .ctrl_mosi(ctrl_mosi),
     .ctrl_spi_clk(ctrl_spi_clk),
-    .ctrl_cs_n(ctrl_cs_n)
+    .ctrl_cs_n(ctrl_cs_n),
+    .ctrl_clk(ctrl_clk)
 );
 
 endmodule
@@ -154,31 +160,41 @@ module spi_controller (
     output logic        cs_n,
     output logic        mosi,    
     input  logic        miso,
-	input  logic  		ce,   
-	input  logic  		re,
+	output logic[15:0] controller_state,
 
-	output logic busy, 
-    output logic[31:0] spi_rdata,
+	// tracing signals for debugging/observation
     output logic ctrl_miso,
     output logic ctrl_mosi,
     output logic ctrl_spi_clk,
-    output logic ctrl_cs_n
+    output logic ctrl_cs_n,
+    output logic ctrl_clk
+
 );
 
 reg miso_reg;
-reg [31:0] spi_data_reg;
-reg spi_data_valid;
 
-// Internal state counters
+always @(posedge clk) begin
+    miso_reg <= miso;
+    ctrl_spi_clk <= spi_clk;
+    ctrl_mosi    <= mosi;
+    ctrl_cs_n    <= cs_n;
+    ctrl_clk     <= clk;
+end
+
+
+assign ctrl_miso = miso_reg;
+
+/*
 `ifndef SYNTHESIS
     localparam wait_cntr_max = 16;
     localparam idle_delay = 100;
     localparam word_gap_cycles = 32;
-`else
-    localparam wait_cntr_max = 100;
-    localparam word_gap_cycles = 1000;
-    localparam idle_delay = 5000;
-`endif
+`else*/
+    localparam wait_cntr_max = 100; //100
+	localparam cs2clk_delay = 500;
+    localparam word_gap_cycles = 1000; //1000
+    localparam idle_delay = 5000; //5000
+//`endif
 
 localparam word_cntr_max = 4;
 localparam bit_cntr_max = 7;
@@ -187,130 +203,137 @@ logic [3:0] word_cntr;
 logic [$clog2(word_gap_cycles+1)-1:0] wait_cntr;
 logic [$clog2(idle_delay+1)-1:0] idle_cntr;
 
-logic [7:0] send_msg [4:0];
-logic [7:0] recv_msg [4:0];
+logic [7:0] send_msg [5:0];
+logic [7:0] recv_msg [5:0];
 
+// create data strcuture for simulation
+`ifndef SYNTHESIS
+
+logic [7:0] sim_recv_msg [5:0];
 initial begin
-    send_msg[4] = 8'h00;
-    send_msg[3] = 8'h00;
-    send_msg[2] = 8'h00;
-    send_msg[1] = 8'h42;
-    send_msg[0] = 8'h01;
+	sim_recv_msg[0] = 8'hFF;
+    sim_recv_msg[1] = 8'h41;
+    sim_recv_msg[2] = 8'h5A;
+    sim_recv_msg[3] = 8'hEF;
+    sim_recv_msg[4] = 8'hFF;
 end
+
+`endif
 
 typedef enum logic [2:0] {
     IDLE = 3'd1,
-    PREPARE = 3'd2,
-    SEND = 3'd3,
-    WAIT = 3'd4
+	CSDELAY = 3'd2,
+    PREPARE = 3'd3,
+    SEND = 3'd4,
+    WAIT = 3'd5
 } state_t;
 
 state_t state;
 
-// SPI rdata output
-assign spi_rdata = spi_data_reg;
-assign busy = (state == PREPARE || state == SEND || state == WAIT);
-
 always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        mosi <= 1'b0;
-        cs_n <= 1'b1;
-        spi_clk <= 1'b1;
+    if(rst)begin
+        mosi <= '0;
+        cs_n <= 1;
+        spi_clk <= 1;
         state <= IDLE;
-        bit_cntr <= 0;
-        word_cntr <= 0;
-        wait_cntr <= 0;
-        idle_cntr <= 0;
-        miso_reg <= 1'b0;
-        spi_data_reg <= 32'b0;
-        spi_data_valid <= 1'b0;
-        recv_msg[0] <= 8'b0;
-        recv_msg[1] <= 8'b0;
-        recv_msg[2] <= 8'b0;
-        recv_msg[3] <= 8'b0;
-        recv_msg[4] <= 8'b0;
-    end else begin
-        miso_reg <= miso;
-        ctrl_spi_clk <= spi_clk;
-        ctrl_mosi    <= mosi;
-        ctrl_cs_n    <= cs_n;
+        bit_cntr <= '0;
+        word_cntr <= '0;
+        wait_cntr <= '0;
+        idle_cntr <= '0;
+		controller_state <= 16'h0000;
+        // Initialize send_msg in reset to ensure proper synthesis
+        send_msg[0] <= 8'h01;
+        send_msg[1] <= 8'h42;
+        send_msg[2] <= 8'h00;
+        send_msg[3] <= 8'h00;
+        send_msg[4] <= 8'h00;
+        send_msg[5] <= 8'h00;
+    end
+    else begin
+    case (state)
+        IDLE: begin
+            mosi <= '0;
+            cs_n <= 1;
+            spi_clk <= 1;
+            bit_cntr <= '0;
+            word_cntr <= '0;
+            wait_cntr <= '0;
 
-        // Latch spi_rdata after transfer completes and read is requested
-        if (!busy && re && ce) begin
-            spi_data_reg <= {recv_msg[4], recv_msg[3], recv_msg[2], recv_msg[1], recv_msg[0]};
-            spi_data_valid <= 1'b1;
-        end
-        if (ce && !re) begin
-            spi_data_valid <= 1'b0;
+            if (idle_cntr < idle_delay) begin
+                idle_cntr <= idle_cntr + 1'b1;
+            end else begin
+                idle_cntr <= '0;
+                cs_n <= 0;
+                state <= CSDELAY;
+            end
         end
 
-        case (state)
-            IDLE: begin
-                mosi <= 0;
-                cs_n <= 1;
-                spi_clk <= 1;
-                bit_cntr <= 0;
-                word_cntr <= 0;
+		CSDELAY: begin
+			cs_n <= 0;
+			spi_clk <= 1;
+			mosi <= 0;
+			if (wait_cntr < cs2clk_delay) begin
+				wait_cntr <= wait_cntr + 1'b1;
+			end else begin
+				wait_cntr <= '0;
+				state <= PREPARE;
+			end
+		end
+
+        PREPARE: begin
+            spi_clk <= 0;
+            cs_n <= 0;
+            mosi <= send_msg[word_cntr][bit_cntr];
+            if (wait_cntr < wait_cntr_max) begin
+                wait_cntr <= wait_cntr + 1'b1;
+            end else begin
+                wait_cntr <= '0;
+                state <= SEND;
+            end
+        end
+        SEND: begin 
+            spi_clk <= 1;
+            cs_n <= 0;
+            // Sample MISO early in the HIGH phase (shortly after rising edge)
+            // For CPHA=1, data is valid after the rising edge
+            if (wait_cntr == 1) begin
+                recv_msg[word_cntr][bit_cntr] <= miso;
+            end
+            if(wait_cntr < wait_cntr_max) begin
+                wait_cntr <= wait_cntr + 1'b1;
+            end 
+            else begin
                 wait_cntr <= 0;
-
-                if (idle_cntr < idle_delay)
-                    idle_cntr <= idle_cntr + 1;
-                else begin
-                    idle_cntr <= 0;
-                    cs_n <= 0;
+                if(bit_cntr < bit_cntr_max) begin
+                    bit_cntr <= bit_cntr + 1'b1;
                     state <= PREPARE;
-                end
-            end
-
-            PREPARE: begin
-                spi_clk <= 0;
-                cs_n <= 0;
-                mosi <= send_msg[word_cntr][bit_cntr];
-                if (wait_cntr < wait_cntr_max)
-                    wait_cntr <= wait_cntr + 1;
-                else begin
-                    wait_cntr <= 0;
-                    state <= SEND;
-                end
-            end
-
-            SEND: begin 
-                spi_clk <= 1;
-                cs_n <= 0;
-                if (wait_cntr == wait_cntr_max - 1)
-                    recv_msg[word_cntr][bit_cntr] <= miso;
-                if(wait_cntr < wait_cntr_max)
-                    wait_cntr <= wait_cntr + 1;
-                else begin
-                    wait_cntr <= 0;
-                    if(bit_cntr < bit_cntr_max) begin
-                        bit_cntr <= bit_cntr + 1;
-                        state <= PREPARE;
-                    end else begin
-                        bit_cntr <= 0;
-                        state <= WAIT;
-                    end
-                end 
-            end
-
-            WAIT: begin
-                spi_clk <= 1;
-                if(wait_cntr < word_gap_cycles) begin
-                    wait_cntr <= wait_cntr + 1;
                 end else begin
-                    wait_cntr <= 0;
-                    if(word_cntr < word_cntr_max) begin
-                        state <= PREPARE;
-                        word_cntr <= word_cntr + 1;
-                    end else begin
-                        state <= IDLE;
-                        word_cntr <= 0;
-                    end
+                    bit_cntr <= 0;
+                    state <= WAIT;
+                end
+            end 
+        end
+        WAIT: begin
+            spi_clk <= 1;
+            if(wait_cntr < word_gap_cycles)begin
+                wait_cntr <= wait_cntr + 1'b1;
+            end else begin
+                wait_cntr <= 0;
+                if(word_cntr < word_cntr_max) begin
+                    state <= PREPARE;
+                    word_cntr <= word_cntr + 1'b1;
+                end else begin
+					// received all data, update controller state and start over
+					// bits are active low, hence store bits inverted to make it easier to query in code
+                    state <= IDLE;
+					controller_state <= ~{recv_msg[3], recv_msg[4]};
+                    word_cntr <= 0;
                 end
             end
-
-            default: $display("ERROR********");
-        endcase
+        end
+        default: 
+            $display("ERROR********");
+    endcase
     end
 end
 
@@ -332,11 +355,14 @@ module ram_module (
 reg [31:0] ram_mem [4095:0];
 reg [31:0] dout_reg;
 
-wire [31:0] index = addr >> 2;
+// note we cannot just shift the address by >> 2 as before, because the RAM has only 4096 entries
+// if we shift >>2 the higher address bits from the address map (0x0001 <=) move into the index space
+// and create an out of bound access
+wire [31:0] index = {18'b0, addr[15:2]};
 
 // readmem (index of first word, index of last word; both are zero-indexed)
 initial begin
-	$readmemh("ram.mi", ram_mem, 0, 4095);
+	$readmemh("ram.mi", ram_mem);
 end
 
 always @(posedge clk) begin
@@ -353,7 +379,7 @@ always @(posedge clk) begin
 		dout_reg <= 32'b0;
 	end
 	else begin
-		if(ce) begin
+		if (re && ce) begin
 			dout_reg <= ram_mem[index];
 		end
 	end
@@ -366,9 +392,9 @@ always @(posedge clk) begin
 	else begin
 		// TODO: check whether we want to gate this update with RE or RE&CE signal here. Compare with SUG949E p.67
 		// currently we update data_out on every clock when not in reset.
-		//if(re && ce) begin
-		data_out <= dout_reg;
-		//end
+		if(re && ce) begin
+			data_out <= dout_reg;
+		end
 	end
 end
 
@@ -390,7 +416,7 @@ reg [31:0] rom_mem [4095:0];
 
 initial begin
 //	$readmemh("rom.mi", rom_mem, 0, 7);
-	$readmemh("rom.mi", rom_mem, 0, 4095);
+	$readmemh("rom.mi", rom_mem);
 	
 	$display("ROM loaded: first instruction = %h", rom_mem[0]);
 
@@ -405,9 +431,9 @@ module framebuffer(
     input logic rst,
     input logic [31:0] din,
     input logic ce,
+    input logic re,
     input logic [31:0] waddr,
     input logic we,
-    input logic re,
     input logic [31:0] raddr_a,
     input logic [31:0] raddr_b,
     output logic [3:0] dout_a,
@@ -626,32 +652,18 @@ module fsm (
 	input  logic [31:0] instr,
 	output logic [31:0] pc,
 
-	output logic[31:0] x5_spi_check, 
-
 	output logic [31:0] bus_addr,
-	input  logic [31:0] bus_rdata_dmem,
-	input  logic [31:0] bus_rdata_spi,
+	input  logic [31:0] bus_rdata,
 	output logic        dmem_ce,
 	output logic        dmem_read,
 	output logic        fbuf_we,
 	output logic [3:0]  dmem_we,
 	output logic [31:0] bus_wdata,
 	output logic        spi_ce,
-	output logic        spi_re,
-	input  logic        spi_busy
-);
+	output logic        spi_re,	
 
-always @(*) begin
-	x5_spi_check[3:0] = bus_rdata[15:11];
-end
-	
-	// Local bus_rdata mux
-    wire [31:0] bus_rdata;
-    
-	assign bus_rdata =
-        (spi_ce) ? bus_rdata_spi :
-        (dmem_ce) ? bus_rdata_dmem :
-        32'b0;
+	input logic [15:0] controller_state
+);
 
 	typedef enum reg[2:0]{
 		FETCH = 0,
@@ -867,6 +879,7 @@ end
 							if(((regfile[rs1] + imm) >> 16) == 16'h0003)begin
 								spi_ce <= 1'b1;
 								spi_re <= 1'b1;
+								$display("EX: prepare read from SPI at addr 0x%h", regfile[rs1] + imm);
 							end
 						end
 						7'b0100011: begin   //S type
@@ -935,17 +948,19 @@ end
 					state <= MEMORY2;
 					case (opcode)
 					7'b0000011: begin  // Load
-						 if(((regfile[rs1] + imm) >> 16) == 16'h0003) begin
-            				spi_ce <= 1;
-            				spi_re <= 1;
-            			if(spi_busy) begin
-                			state <= MEMORY1;   // stall until SPI done
-            			end else begin
-                			state <= MEMORY2;
-            			end
-        				end else begin
-            				state <= MEMORY2;
-        				end
+						// keep values for dmem_ce and dmem_read from EXECUTE stage, only active if read from data memory (not framebuffer)
+						// TODO: Check where we need to keep signals active for whole MEM stage
+						//dmem_ce <= 1;
+						//dmem_read <= 1;
+
+						`ifndef SYNTHESIS
+
+						if(spi_ce && spi_re) begin
+							$display("MEM1: prepare read from SPI at addr 0x%h", bus_addr);
+						end
+
+						`endif
+
 					end
 					7'b0100011: begin	// Store
 						// if address in framebuffer range
@@ -1014,8 +1029,15 @@ end
 					case(opcode) 
 						7'b0000011: begin  // Load
 						set_rd_flag <= 1;
-						if(((regfile[rs1] + imm) >> 16) == 16'h0003)begin
-							tmp_rd <= bus_rdata;
+						if(bus_addr[31:16] == 16'h0003) begin
+							spi_ce <= 1'b0;
+							spi_re <= 1'b0;
+							tmp_rd <= {16'b0, controller_state};
+							
+							`ifndef SYNTHESIS
+							$display("Read from SPI: addr = 0x%h , data 0x%h", bus_addr, controller_state);
+							`endif
+
 						end else begin
 						case (funct3)
 							3'b000: begin     //lb
@@ -1043,7 +1065,7 @@ end
 								endcase
 							end
 							3'b010:       //lw
-								tmp_rd <= bus_rdata;
+									tmp_rd <= bus_rdata;
 							3'b100: begin     //lbu
 								case (bus_addr[1:0])
 									2'b00:
@@ -1253,7 +1275,8 @@ task show_instruction;
 							$display("bltu x%d, x%d, %d", rs1, rs2, imm);
 						3'b111:
 							$display("bgeu x%d, x%d, %d", rs1, rs2, imm);
-						default:  $display("illegal instruction");					endcase
+						default:  $display("illegal instruction");
+					endcase
 				end
 				7'b1101111:
 					$display("jal x%d, %d", rd, imm);
