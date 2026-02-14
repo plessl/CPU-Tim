@@ -10,7 +10,6 @@ int x_n, y_n; //New coordinates of head
 char game_over;
 char game_win;
 
-volatile unsigned int * const fb_base = (volatile unsigned int *) 0x00020000;
 volatile unsigned int * const spi_base = (volatile unsigned int *) 0x00030000;
 
 // Key mapping: L D R U □ X O △ R1 L1 R2 L2 (low active = 0 when pressed)
@@ -27,6 +26,11 @@ unsigned int read_buttons() {
     return *spi_base;
 }
 
+#define SCREEN_WIDTH 64
+#define SCREEN_HEIGHT 64
+
+volatile unsigned int * const fb_base = (volatile unsigned int *) 0x00020000;
+
 void fb_write(unsigned row, unsigned col, unsigned r, unsigned g, unsigned b) {
     volatile unsigned int *fb = (volatile unsigned int *)fb_base;
     /*if (row < 0 || row >= SCREEN_HEIGHT || col < 0 || col >= SCREEN_WIDTH) {
@@ -36,7 +40,7 @@ void fb_write(unsigned row, unsigned col, unsigned r, unsigned g, unsigned b) {
     g = (g >= 1) ? 1 : 0;
     b = (b >= 1) ? 1 : 0;
 
-    fb[row * 64 + col] = (r << 2) | (g << 1) | b;
+    fb[row * SCREEN_WIDTH + col] = (r << 2) | (g << 1) | b;
 }
 
 enum dir

@@ -1,0 +1,2530 @@
+From 83b92c0c17dcacc7777a90832477ad0f03fd72ac Mon Sep 17 00:00:00 2001
+From: Tim Heilmann <timtueftel@icloud.com>
+Date: Sat, 14 Feb 2026 16:32:41 +0100
+Subject: [PATCH] feat(cpu): add SPI controller integration, button I/O, and
+ test applications
+
+- Fix SPI controller to properly sample MISO on rising edge (CPHA=1)
+  and add CS-to-clock delay state for reliable PS2 controller comms
+- Store controller state as inverted active-high bits for easier querying
+- Fix RAM module address indexing to use only lower 14 bits, preventing
+  out-of-bound access from upper address map bits
+- Gate RAM data_out with re && ce signals for correct read behavior
+- Route controller button state to dedicated output pins (up/down/left/right)
+- Read controller state directly via memory-mapped register (0x00030000)
+  instead of routing through shared bus_rdata
+- Add show-controller app (C + boot.s + linker script) to display
+  controller button state on framebuffer
+- Add test-ram-spi assembly test app for basic RAM and SPI verification
+- Add PINOUT.md documenting FPGA pin assignments for HUB75E, PS2, and
+  board connectors
+- Add development logbook with controller protocol notes and RV32 ABI
+- Update pin constraints with corrected SPI pin mapping and button I/O
+- Add verible config and surfer waveform viewer state
+---
+ .../Verilog/CPU/Prozessor/.verible_root       |    1 +
+ .../Verilog/CPU/Prozessor/PINOUT.md           |  103 ++
+ .../Verilog/CPU/Prozessor/Prozessor.gprj.user |    4 +-
+ .../CPU/Prozessor/src/Logbook-Captain.md      |   96 ++
+ .../Verilog/CPU/Prozessor/src/Prozessor.cst   |   47 +-
+ .../Prozessor/src/apps/show-controller/boot.s |   61 +
+ .../src/apps/show-controller/build.sh         |   22 +
+ .../src/apps/show-controller/link.ld          |   80 +
+ .../Prozessor/src/apps/show-controller/main.c |   38 +
+ .../Prozessor/src/apps/test-ram-spi/build.sh  |   10 +
+ .../Prozessor/src/apps/test-ram-spi/link.x    |  122 ++
+ .../src/apps/test-ram-spi/test-ram-spi.s      |   18 +
+ .../Verilog/CPU/Prozessor/src/cpu.sv          |  139 +-
+ .../Verilog/CPU/Prozessor/src/test/tb.sv      |    2 +-
+ .../Verilog/CPU/Prozessor/surfer-state.*      | 1437 +++++++++++++++++
+ 15 files changed, 2112 insertions(+), 68 deletions(-)
+ create mode 100644 PraktischerTeil/Verilog/CPU/Prozessor/.verible_root
+ create mode 100644 PraktischerTeil/Verilog/CPU/Prozessor/PINOUT.md
+ create mode 100644 PraktischerTeil/Verilog/CPU/Prozessor/src/Logbook-Captain.md
+ create mode 100644 PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/boot.s
+ create mode 100755 PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/build.sh
+ create mode 100644 PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/link.ld
+ create mode 100644 PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/main.c
+ create mode 100755 PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/build.sh
+ create mode 100644 PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/link.x
+ create mode 100644 PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/test-ram-spi.s
+ create mode 100644 PraktischerTeil/Verilog/CPU/Prozessor/surfer-state.*
+
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/.verible_root b/PraktischerTeil/Verilog/CPU/Prozessor/.verible_root
+new file mode 100644
+index 0000000..de0dd2d
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/.verible_root
+@@ -0,0 +1 @@
++--use_tabs
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/PINOUT.md b/PraktischerTeil/Verilog/CPU/Prozessor/PINOUT.md
+new file mode 100644
+index 0000000..3690bfb
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/PINOUT.md
+@@ -0,0 +1,103 @@
++
++## Board pinout 
++
++
++CLK | E2
++RST | H11
++
++
++IO_PORT "rst" IO_TYPE=LVCMOS33 PULL_MODE=DOWN BANK_VCCIO=3.3;
++IO_LOC "clk" E2;
++IO_PORT "clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3;
++
++
++
++
++
++## Mapping of TANG FPGA Board Connector to FPGA Pins
++
++|Header|FPGA PIN | 
++|   40 | J11 |
++|   38 |  F7 | 
++|   36 |  J8 | 
++|   34 |  L9 | 
++|   32 | L10 | 
++|   30 |  K7 | 
++|   28 |  H1 | 
++|   26 |  G4 | 
++|   24 |  J1 | 
++|   22 |  E3 | 
++|   20 |  E1 | 
++|   18 |  E2 | 
++
++
++## Mapping of PS2 Dual Shock Controller
++
++
++P1  | CS1N |  F5
++    | MOSI |  G7
++    | MISO |  H8
++    | SCLK |  H5
++    | GND  | GND
++    | 3V3  | 3V3
++
++P2  | CS2N |  G5
++    | MOSI |  G8
++    | MISO |  H7
++    | SCLK |  J5
++    | GND  | GND
++    | 3V3  | 3V3
++
++
++## HUB75E PMOD (matrix display, connected to first two ports of board, closest to USB connectre)
++
++DISPLAY_CLK | L11 | none
++LATCH       | K11  | none
++DISPLAY_OE          | K5  | none
++A (row_addr[0]) | A10 | none
++B (row_addr[1]) | A11 | none
++C (row_addr[2]) | E10 | none
++D (row_addr[3]) | E11 | none
++E (row_addr[4]) | C11 | none
++
++
++dout_a[0] | D10
++dout_a[1] | G11
++dout_a[2] | G10
++
++dout_b[0] | C10
++dout_b[1] | B11
++dout_b[2] | B10
++
++
++IO_LOC "dout_b[2]" B10;
++IO_PORT "dout_b[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "dout_b[1]" B11;
++IO_PORT "dout_b[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "dout_b[0]" C10;
++IO_PORT "dout_b[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "dout_a[2]" G10;
++IO_PORT "dout_a[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "dout_a[1]" G11;
++IO_PORT "dout_a[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "dout_a[0]" D10;
++IO_PORT "dout_a[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++
++
++
++IO_LOC "display_clk" L11;
++IO_PORT "display_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "latch" K11;
++IO_PORT "latch" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "display_oe" K5;
++IO_PORT "display_oe" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "row_addr[4]" C11;
++IO_PORT "row_addr[4]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "row_addr[3]" E11;
++IO_PORT "row_addr[3]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "row_addr[2]" E10;
++IO_PORT "row_addr[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "row_addr[1]" A11;
++IO_PORT "row_addr[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "row_addr[0]" A10;
++IO_PORT "row_addr[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+\ No newline at end of file
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/Prozessor.gprj.user b/PraktischerTeil/Verilog/CPU/Prozessor/Prozessor.gprj.user
+index d4a6b93..f3f6859 100644
+--- a/PraktischerTeil/Verilog/CPU/Prozessor/Prozessor.gprj.user
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/Prozessor.gprj.user
+@@ -22,6 +22,6 @@
+         <ResultFile ResultFileType="RES.syn.report" ResultFilePath="impl/gwsynthesis/Prozessor_syn.rpt.html"/>
+         <ResultFile ResultFileType="RES.syn.resource" ResultFilePath="impl/gwsynthesis/Prozessor_syn_rsc.xml"/>
+     </ResultFileList>
+-    <Ui>000000ff00000001fd000000020000000000000114000001e5fc0200000002fc00000023000001130000000000fffffffaffffffff0200000001fb00000030004600700067006100500072006f006a006500630074002e00500061006e0065006c002e00440065007300690067006e0100000000ffffffff0000000000000000fc0000013c000000cc0000000000fffffffaffffffff0200000003fb00000030004600700067006100500072006f006a006500630074002e00500061006e0065006c002e00440065007300690067006e0100000000ffffffff0000000000000000fb00000032004600700067006100500072006f006a006500630074002e00500061006e0065006c002e00500072006f00630065007300730100000000ffffffff0000000000000000fb00000036004600700067006100500072006f006a006500630074002e00500061006e0065006c002e0048006900650072006100720063006800790100000000ffffffff0000000000000000000000030000051500000126fc0100000001fc0000000000000515000000a500fffffffa000000000100000002fb00000032004600700067006100500072006f006a006500630074002e00500061006e0065006c002e00470065006e006500720061006c0100000000ffffffff0000004c00fffffffb0000002e004600700067006100500072006f006a006500630074002e00500061006e0065006c002e004900730073007500650100000000ffffffff000000a500ffffff000003fb000001e500000004000000040000000800000008fc000000010000000200000004000000220043006f00720065002e0054006f006f006c006200610072002e00460069006c00650100000000ffffffff0000000000000000000000220043006f00720065002e0054006f006f006c006200610072002e004500640069007401000000a8ffffffff0000000000000000000000240043006f00720065002e0054006f006f006c006200610072002e0054006f006f006c00730100000174ffffffff0000000000000000000000280043006f00720065002e0054006f006f006c006200610072002e00500072006f0063006500730073010000024fffffffff0000000000000000</Ui>
+-    <FpUi>312e30313130000000ff00000000fd0000000200000000000001000000012afc0200000001fc000000270000012a000000930100001bfa000000010200000002fb0000001c0044006f0063006b00650072002e00530075006d006d0061007200790100000000ffffffff0000007700fffffffb0000001c0044006f0063006b00650072002e004e00650074006c0069007300740100000000ffffffff0000005d00ffffff00000003000002d000000101fc0100000001fc00000000000002d00000007b00fffffffa00000001010000000bfb0000001c0044006f0063006b00650072002e004d0065007300730061006700650100000000ffffffff0000005c00fffffffb0000002c0044006f0063006b00650072002e0049002f004f002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004a00fffffffb000000380044006f0063006b00650072002e005000720069006d00690074006900760065002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004a00fffffffb000000300044006f0063006b00650072002e00470072006f00750070002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004a00fffffffb000000360044006f0063006b00650072002e005200650073006f0075007200630065002e005200650073006500720076006100740069006f006e0100000000ffffffff0000004a00fffffffb000000380044006f0063006b00650072002e0043006c006f0063006b002e004e00650074002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004a00fffffffb000000420044006f0063006b00650072002e00470043004c004b002e005000720069006d00690074006900760065002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004a00fffffffb000000420044006f0063006b00650072002e00480043004c004b002e005000720069006d00690074006900760065002e0043006f006e00730074007200610069006e007400730000000000ffffffff0000004a00fffffffb000000440044006f0063006b00650072002e00470043004c004b0032002e005000720069006d00690074006900760065002e0043006f006e00730074007200610069006e007400730000000000ffffffff0000004a00fffffffb000000460044006f0063006b00650072002e00480043004c004b00350041002e005000720069006d00690074006900760065002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004a00fffffffb0000002e0044006f0063006b00650072002e0056007200650066002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004a00ffffff000001ca0000012a00000004000000040000000800000008fc000000010000000200000001000000180054006f006f006c004200610072002e00460069006c00650100000000ffffffff0000000000000000</FpUi>
++    <Ui>000000ff00000001fd000000020000000000000114000002cffc0200000002fc000000240000019d0000006100fffffffa000000000200000001fb00000030004600700067006100500072006f006a006500630074002e00500061006e0065006c002e00440065007300690067006e0100000000ffffffff0000006100fffffffc000001c2000001310000009801000014fa000000010200000003fb00000030004600700067006100500072006f006a006500630074002e00500061006e0065006c002e00440065007300690067006e0100000000ffffffff0000000000000000fb00000032004600700067006100500072006f006a006500630074002e00500061006e0065006c002e00500072006f00630065007300730100000000ffffffff0000005d00fffffffb00000036004600700067006100500072006f006a006500630074002e00500061006e0065006c002e0048006900650072006100720063006800790100000000ffffffff0000008300ffffff00000003000005c200000126fc0100000001fc00000000000005c2000000ac00fffffffa000000000100000002fb00000032004600700067006100500072006f006a006500630074002e00500061006e0065006c002e00470065006e006500720061006c0100000000ffffffff0000004900fffffffb0000002e004600700067006100500072006f006a006500630074002e00500061006e0065006c002e004900730073007500650100000000ffffffff000000ac00ffffff000004ad000002cf00000004000000040000000800000008fc000000010000000200000004000000220043006f00720065002e0054006f006f006c006200610072002e00460069006c00650100000000ffffffff0000000000000000000000220043006f00720065002e0054006f006f006c006200610072002e004500640069007401000000d1ffffffff0000000000000000000000240043006f00720065002e0054006f006f006c006200610072002e0054006f006f006c007301000001d2ffffffff0000000000000000000000280043006f00720065002e0054006f006f006c006200610072002e00500072006f006300650073007301000002e5ffffffff0000000000000000</Ui>
++    <FpUi>312e30313130000000ff00000000fd00000002000000000000010000000292fc0200000001fc0000002c00000292000000a101000014fa000000010200000002fb0000001c0044006f0063006b00650072002e00530075006d006d0061007200790100000000ffffffff0000008c00fffffffb0000001c0044006f0063006b00650072002e004e00650074006c0069007300740100000000ffffffff0000005d00ffffff000000030000050000000101fc0100000001fc0000000000000500000001c100fffffffa00000001010000000bfb0000001c0044006f0063006b00650072002e004d0065007300730061006700650100000000ffffffff0000005f00fffffffb0000002c0044006f0063006b00650072002e0049002f004f002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004700fffffffb000000380044006f0063006b00650072002e005000720069006d00690074006900760065002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004700fffffffb000000300044006f0063006b00650072002e00470072006f00750070002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004700fffffffb000000360044006f0063006b00650072002e005200650073006f0075007200630065002e005200650073006500720076006100740069006f006e0100000000ffffffff0000004700fffffffb000000380044006f0063006b00650072002e0043006c006f0063006b002e004e00650074002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004700fffffffb000000420044006f0063006b00650072002e00470043004c004b002e005000720069006d00690074006900760065002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004700fffffffb000000420044006f0063006b00650072002e00480043004c004b002e005000720069006d00690074006900760065002e0043006f006e00730074007200610069006e007400730000000000ffffffff0000004700fffffffb000000440044006f0063006b00650072002e00470043004c004b0032002e005000720069006d00690074006900760065002e0043006f006e00730074007200610069006e007400730000000000ffffffff0000004700fffffffb000000460044006f0063006b00650072002e00480043004c004b00350041002e005000720069006d00690074006900760065002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004700fffffffb0000002e0044006f0063006b00650072002e0056007200650066002e0043006f006e00730074007200610069006e007400730100000000ffffffff0000004700ffffff000003ff0000029200000004000000040000000800000008fc000000010000000200000001000000180054006f006f006c004200610072002e00460069006c00650100000000ffffffff0000000000000000</FpUi>
+ </UserConfig>
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/Logbook-Captain.md b/PraktischerTeil/Verilog/CPU/Prozessor/src/Logbook-Captain.md
+new file mode 100644
+index 0000000..d2230fd
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/Logbook-Captain.md
+@@ -0,0 +1,96 @@
++# Logbuch des Captains
++
++## Install verible tools for SystemVerilog (language server, linting, formattter, ...)
++
++https://github.com/chipsalliance/homebrew-verible
++
++`
++brew tap chipsalliance/verible
++brew install verible
++`
++
++
++### Game controller
++
++Sources:
++
++- https://hackaday.io/project/170365-blueretro/log/186471-playstation-playstation-2-spi-interface
++
++```
++TX: 0142000000
++RX: FF415AFFFF
++      ├┘  └┬─┘
++      ID   └Buttons(L D R U St R3 L3 Se □ X O △ R1 L1 R2 L2)
++```
++
++SPI Protocol variant (mode 3):
++
++- Clock polarity (CPOL): The clock is idle high (CPOL=1)
++- Clock phase (CPHA): Data is captured on the second clock edge (CPHA=1), i.e. rising edge.
++- Bytes are transferred LSB first
++
++
++
++
++### Data sent by the controller, traced with logic analyzer
++
++
++LEFT  | 7F FF | 0111 1111 1111 1111 ( bit ~15)
++DOWN  | BF FF | 1011 1111 1111 1111 ( 
++RIGHT | DF FF | 1101 1111 1111 1111
++UP    | EF FF | 1110 1111 1111 1111
++
++SEL   | FE FF | 1111 1110 1111 1111
++START | F7 FF | 1111 0111 1111 1111 
++
++STICK1 | FD FF | 1111 1101 1111 1111
++STICK2 | FB FF | 1111 1011 1111 1111
++
++1 /   |  FF EF | 1111 1111 1110 1111
++2    |  FF DF  | 1111 1111 1101 1111
++3    |  FF BF  | 1111 1111 1011 1111 
++4    |  FF 7F  | 1111 1111 0111 1111
++
++L1   | FF FB  | 1111 1111 1111 1011
++L2   | FF FE  | 1111 1111 1111 1110
++R1   | FF F7  | 1111 1111 1111 0111
++R2   | FF FD  | 1111 1111 1111 1101
++
++
++
++## RISC-V RV32 (RVA32) ABI register mapping.
++
++x-reg	ABI Name	Description
++x0	zero	Hard-wired zero
++x1	ra	Return address
++x2	sp	Stack pointer
++x3	gp	Global pointer
++x4	tp	Thread pointer
++x5	t0	Temporary
++x6	t1	Temporary
++x7	t2	Temporary
++x8	s0 / fp	Saved register / Frame pointer
++x9	s1	Saved register
++x10	a0	Argument / Return value
++x11	a1	Argument / Return value
++x12	a2	Argument
++x13	a3	Argument
++x14	a4	Argument
++x15	a5	Argument
++x16	a6	Argument
++x17	a7	Argument
++x18	s2	Saved register
++x19	s3	Saved register
++x20	s4	Saved register
++x21	s5	Saved register
++x22	s6	Saved register
++x23	s7	Saved register
++x24	s8	Saved register
++x25	s9	Saved register
++x26	s10	Saved register
++x27	s11	Saved register
++x28	t3	Temporary
++x29	t4	Temporary
++x30	t5	Temporary
++x31	t6	Temporary
++
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/Prozessor.cst b/PraktischerTeil/Verilog/CPU/Prozessor/src/Prozessor.cst
+index 1bcd013..10f7364 100644
+--- a/PraktischerTeil/Verilog/CPU/Prozessor/src/Prozessor.cst
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/Prozessor.cst
+@@ -1,12 +1,35 @@
+ //Copyright (C)2014-2025 Gowin Semiconductor Corporation.
+ //All rights reserved. 
+ //File Title: Physical Constraints file
+-//Tool Version: V1.9.12
++//Tool Version: V1.9.12.01
+ //Part Number: GW5A-LV25MG121NC1/I0
+ //Device: GW5A-25
+ //Device Version: A
+-//Created Time: Tue 01 20 18:57:43 2026
++//Created Time: Fri 02 13 22:25:27 2026
+ 
++IO_LOC "button_right" H1;
++IO_PORT "button_right" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "button_left" L10;
++IO_PORT "button_left" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "button_down" K7;
++IO_PORT "button_down" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "button_up" G4;
++IO_PORT "button_up" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_PORT "ctrl_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "ctrl_cs_n" J11;
++IO_PORT "ctrl_cs_n" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "ctrl_spi_clk" F7;
++IO_PORT "ctrl_spi_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "ctrl_mosi" J8;
++IO_PORT "ctrl_mosi" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "ctrl_miso" L9;
++IO_PORT "ctrl_miso" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "mosi" G7;
++IO_PORT "mosi" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "cs_n" F5;
++IO_PORT "cs_n" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "spi_clk" H5;
++IO_PORT "spi_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+ IO_LOC "dout_b[2]" B10;
+ IO_PORT "dout_b[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+ IO_LOC "dout_b[1]" B11;
+@@ -35,25 +58,9 @@ IO_LOC "row_addr[1]" A11;
+ IO_PORT "row_addr[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+ IO_LOC "row_addr[0]" A10;
+ IO_PORT "row_addr[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
++IO_LOC "miso" H8;
++IO_PORT "miso" IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3;
+ IO_LOC "rst" H11;
+ IO_PORT "rst" IO_TYPE=LVCMOS33 PULL_MODE=DOWN BANK_VCCIO=3.3;
+ IO_LOC "clk" E2;
+ IO_PORT "clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3;
+-IO_LOC "ctrl_clk" L10;
+-IO_PORT "ctrl_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+-IO_LOC "ctrl_cs_n" J11;
+-IO_PORT "ctrl_cs_n" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+-IO_LOC "ctrl_spi_clk" L9;
+-IO_PORT "ctrl_spi_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+-IO_LOC "ctrl_mosi" J8;
+-IO_PORT "ctrl_mosi" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+-IO_LOC "ctrl_miso" F7;
+-IO_PORT "ctrl_miso" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+-IO_LOC "mosi" G7;
+-IO_PORT "mosi" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+-IO_LOC "cs_n" F5;
+-IO_PORT "cs_n" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+-IO_LOC "spi_clk" H5;
+-IO_PORT "spi_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+-IO_LOC "miso" H8;
+-IO_PORT "miso" IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3;
+\ No newline at end of file
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/boot.s b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/boot.s
+new file mode 100644
+index 0000000..5d19881
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/boot.s
+@@ -0,0 +1,61 @@
++/* boot.s - RV32I bare-metal startup (no traps, no SystemInit, no interrupts) */
++
++    .option norvc
++    .section .text.startup
++    .globl _start
++    .type  _start, @function
++
++_start:
++    /* Set up stack */
++    la      sp, __stack_top
++
++    /* Set up global pointer (for small data) */
++    .option push
++    .option norelax
++    la      gp, __global_pointer$
++    .option pop
++
++    /* Copy .data from ROM image to RAM */
++    la      a0, __data_load      /* src (ROM) */
++    la      a1, __data_start     /* dst (RAM) */
++    la      a2, __data_end       /* end */
++1:
++    beq     a1, a2, 2f
++    lw      t0, 0(a0)
++    sw      t0, 0(a1)
++    addi    a0, a0, 4
++    addi    a1, a1, 4
++    j       1b
++2:
++
++    /* Zero .bss */
++    la      a1, __bss_start
++    la      a2, __bss_end
++3:
++    beq     a1, a2, 4f
++    sw      zero, 0(a1)
++    addi    a1, a1, 4
++    j       3b
++4:
++
++    /* Optional: clear framebuffer */
++    /*
++    la      a1, __fb_start
++    la      a2, __fb_end
++5:
++    beq     a1, a2, 6f
++    sw      zero, 0(a1)
++    addi    a1, a1, 4
++    j       5b
++6:
++    */
++
++    /* Call main */
++    call    main
++
++    /* If main returns, spin forever */
++hang:
++    j       hang
++
++    .size _start, . - _start
++    
+\ No newline at end of file
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/build.sh b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/build.sh
+new file mode 100755
+index 0000000..2fd72fe
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/build.sh
+@@ -0,0 +1,22 @@
++#!/bin/sh
++
++APP=main
++
++riscv64-unknown-elf-gcc \
++  -march=rv32i -mabi=ilp32 \
++  -ffreestanding -nostdlib -static \
++  -fno-pic -fno-pie \
++  -fdata-sections -ffunction-sections \
++  -O2 \
++  -Wl,-T,link.ld \
++  -Wl,--gc-sections \
++  -Wall -Wextra \
++  -g \
++  boot.s ${APP}.c \
++  -o ${APP}.elf
++
++riscv64-unknown-elf-objcopy -O binary ${APP}.elf ${APP}.bin
++hexdump -v -e '1/4 "%08x\n"' ${APP}.bin > ${APP}.mi
++riscv64-unknown-elf-objdump -S --disassemble-all ${APP}.elf > ${APP}.disasm
++cp ${APP}.mi rom.mi
++
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/link.ld b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/link.ld
+new file mode 100644
+index 0000000..ffc6885
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/link.ld
+@@ -0,0 +1,80 @@
++ENTRY(_start)
++
++MEMORY
++{
++  ROM (rx)  : ORIGIN = 0x00000000, LENGTH = 16K
++  RAM (rw)  : ORIGIN = 0x00010000, LENGTH = 16K
++  FB  (rwx) : ORIGIN = 0x00020000, LENGTH = 16K   /* frame buffer RAM-like */
++}
++
++SECTIONS
++{
++  /* ------------------------------------------------------------
++   * Code + constants in ROM (raw binary image)
++   * ------------------------------------------------------------ */
++  .text :
++  {
++    KEEP(*(.init))
++    KEEP(*(.text.startup*))
++    *(.text .text.*)
++    *(.rodata .rodata.*)
++    *(.srodata .srodata.*)
++    KEEP(*(.fini))
++  } > ROM
++
++  /* ------------------------------------------------------------
++   * Writable data in RAM, load image stored in ROM after .text
++   * ------------------------------------------------------------ */
++  .data : AT(LOADADDR(.text) + SIZEOF(.text))
++  {
++    __data_start = .;
++    *(.data .data.*)
++    *(.sdata .sdata.*)
++    __data_end = .;
++  } > RAM
++
++  /* Load address of .data in ROM */
++  __data_load = LOADADDR(.data);
++
++  /* ------------------------------------------------------------
++   * Zero-initialized data in RAM
++   * ------------------------------------------------------------ */
++  .bss (NOLOAD) :
++  {
++    __bss_start = .;
++    *(.bss .bss.*)
++    *(.sbss .sbss.*)
++    *(COMMON)
++    __bss_end = .;
++  } > RAM
++
++  /* ------------------------------------------------------------
++   * Framebuffer in dedicated RAM-like region
++   * ------------------------------------------------------------ */
++  .framebuffer (NOLOAD) :
++  {
++    __fb_start = .;
++    *(.framebuffer .framebuffer.*)
++    __fb_end = .;
++  } > FB
++
++  /* ------------------------------------------------------------
++   * Symbols for startup code
++   * ------------------------------------------------------------ */
++
++  /* Stack grows down from top of RAM */
++  __stack_top = ORIGIN(RAM) + LENGTH(RAM);
++
++  /* Global pointer for small-data (RISC-V ABI convention) */
++  __global_pointer$ = ORIGIN(RAM) + 0x800;
++
++  /* ------------------------------------------------------------
++   * Discard unused / unwanted sections
++   * ------------------------------------------------------------ */
++  /DISCARD/ :
++  {
++    *(.comment*)
++    *(.note*)
++    *(.eh_frame*)
++  }
++}
+\ No newline at end of file
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/main.c b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/main.c
+new file mode 100644
+index 0000000..18abab1
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/show-controller/main.c
+@@ -0,0 +1,38 @@
++#define SCREEN_WIDTH 64
++#define SCREEN_HEIGHT 64
++
++volatile unsigned int * const fb_base = (volatile unsigned int *) 0x00020000;
++volatile unsigned int * const pad_base = (volatile unsigned int *) 0x00030000;
++
++void fb_write(unsigned row, unsigned col, unsigned value) {
++    fb_base[row * SCREEN_WIDTH + col] = (value & 0x1) ? 7 : 0;
++}
++
++
++int main(){    
++    unsigned b;
++    while(1) {
++        volatile unsigned int pad_data = *pad_base;
++        b = ((pad_data &    0x1) ? 1 : 0); fb_write(0, 15, b);
++        b = ((pad_data &    0x2) ? 1 : 0); fb_write(0, 14, b);
++        b = ((pad_data &    0x4) ? 1 : 0); fb_write(0, 13, b);
++        b = ((pad_data &    0x8) ? 1 : 0); fb_write(0, 12, b);
++
++        b = ((pad_data &   0x10) ? 1 : 0); fb_write(0, 11, b);
++        b = ((pad_data &   0x20) ? 1 : 0); fb_write(0, 10, b);
++        b = ((pad_data &   0x40) ? 1 : 0); fb_write(0, 9, b);
++        b = ((pad_data &   0x80) ? 1 : 0); fb_write(0, 8, b);
++
++        b = ((pad_data &  0x100) ? 1 : 0); fb_write(0, 7, b);
++        b = ((pad_data &  0x200) ? 1 : 0); fb_write(0, 6, b);
++        b = ((pad_data &  0x400) ? 1 : 0); fb_write(0, 5, b);
++        b = ((pad_data &  0x800) ? 1 : 0); fb_write(0, 4, b);
++
++        b = ((pad_data & 0x1000) ? 1 : 0); fb_write(0, 3, b);
++        b = ((pad_data & 0x2000) ? 1 : 0); fb_write(0, 2, b);
++        b = ((pad_data & 0x4000) ? 1 : 0); fb_write(0, 1, b);
++        b = ((pad_data & 0x8000) ? 1 : 0); fb_write(0, 0, b);
++
++
++    }
++}
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/build.sh b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/build.sh
+new file mode 100755
+index 0000000..aa9c567
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/build.sh
+@@ -0,0 +1,10 @@
++#!/bin/sh
++
++APP=test-ram-spi
++CFLAGS="-march=rv32i -mabi=ilp32 -nostdlib -nostartfiles -Tlink.x"
++riscv64-unknown-elf-gcc ${CFLAGS} -o ${APP}.elf ${APP}.s
++riscv64-unknown-elf-objcopy -O binary -j .text ${APP}.elf ${APP}.bin
++hexdump -v -e '1/4 "%08x\n"' ${APP}.bin > ${APP}.mi
++cp ${APP}.mi rom.mi
++
++riscv64-unknown-elf-objdump -M numeric,no-aliases --disassemble-all ${APP}.elf > ${APP}.disasm
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/link.x b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/link.x
+new file mode 100644
+index 0000000..96098f0
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/link.x
+@@ -0,0 +1,122 @@
++/* Linker-Skript für RISC-V RV32
++ *
++ * Speicherlayout:
++ *  - TEXT/RX  : 0x00000000 .. 0x00003FFF  (16 KiB)
++ *  - DATA/RW  : 0x00010000 .. 0x00013FFF  (16 KiB)
++ *  - FB/WO    : 0x00020000 .. 0x00023FFF  (16 KiB)  (write-only, aus Sicht des Linkers: nur RW, aber keine Initialisierung)
++ *
++ * Hinweis: GNU ld kennt kein echtes "write-only"-Attribut. Das Segment wird als RW modelliert,
++ *         und es werden keine Initialisierungsdaten (.data) dorthin gelegt.
++ */
++
++OUTPUT_ARCH(riscv)
++ENTRY(_start)
++
++MEMORY
++{
++  TEXT (rx)  : ORIGIN = 0x00000000, LENGTH = 16K
++  DATA (rw)  : ORIGIN = 0x00010000, LENGTH = 16K
++  FB   (rw)  : ORIGIN = 0x00020000, LENGTH = 16K
++}
++
++SECTIONS
++{
++  /* ------------------------------------------------------------------ */
++  /* Programmcode / Read-Only Daten in TEXT                              */
++  /* ------------------------------------------------------------------ */
++  . = ORIGIN(TEXT);
++
++  .text : ALIGN(4)
++  {
++    KEEP(*(.init))
++    KEEP(*(.vectors .vector .isr_vector .trap_vector))
++    *(.text .text.*)
++    *(.plt)
++    *(.rodata .rodata.*)
++    *(.srodata .srodata.*)
++    KEEP(*(.fini))
++  } > TEXT
++
++  /* Optional: Exception-Handling- und Debug-Sections (falls vorhanden) */
++  .eh_frame : ALIGN(4) { *(.eh_frame .eh_frame.*) } > TEXT
++  .gcc_except_table : ALIGN(4) { *(.gcc_except_table .gcc_except_table.*) } > TEXT
++
++  /* ------------------------------------------------------------------ */
++  /* Initialisierte Daten in DATA                                        */
++  /* LMA (Load Address) liegt in TEXT, VMA (Run Address) liegt in DATA   */
++  /* ------------------------------------------------------------------ */
++  . = ORIGIN(DATA);
++
++  __data_start = .;
++
++  .data : ALIGN(4)
++  {
++    *(.data .data.*)
++    *(.sdata .sdata.*)
++  } > DATA AT> TEXT
++
++  __data_end = .;
++
++  /* Quelle der Initialisierungsdaten im Flash/ROM (TEXT) */
++  __data_load_start = LOADADDR(.data);
++  __data_load_end   = LOADADDR(.data) + SIZEOF(.data);
++
++  /* ------------------------------------------------------------------ */
++  /* Uninitialisierte Daten (BSS) in DATA                                */
++  /* ------------------------------------------------------------------ */
++  __bss_start = .;
++
++  .bss (NOLOAD) : ALIGN(4)
++  {
++    *(.bss .bss.*)
++    *(.sbss .sbss.*)
++    *(COMMON)
++  } > DATA
++
++  __bss_end = .;
++
++  /* ------------------------------------------------------------------ */
++  /* Heap/Stack (optional) in DATA                                       */
++  /* ------------------------------------------------------------------ */
++  . = ALIGN(8);
++  __heap_start = .;
++
++  /* Heap wächst nach oben; Stack nach unten vom Ende des DATA-Segments */
++  __stack_top  = ORIGIN(DATA) + LENGTH(DATA);
++  __stack_end  = __stack_top; /* Alias */
++
++  /* ------------------------------------------------------------------ */
++  /* Framebuffer: eigener Output-Abschnitt im FB-Segment                 */
++  /* - NOLOAD: keine Initialisierung, keine Load-Image-Daten             */
++  /* - hier nur explizit zu platzierende Sections (*.fb*)                */
++  /* ------------------------------------------------------------------ */
++  . = ORIGIN(FB);
++
++  __fb_start = .;
++
++  .framebuffer (NOLOAD) : ALIGN(4)
++  {
++    *(.fb .fb.*)
++    *(.framebuffer .framebuffer.*)
++  } > FB
++
++  __fb_end = .;
++
++  /* ------------------------------------------------------------------ */
++  /* Linker-Sicherheitsnetze                                             */
++  /* ------------------------------------------------------------------ */
++
++  /* Keine ungewollten Sections */
++  /DISCARD/ :
++  {
++    *(.comment)
++    *(.note .note.*)
++    *(.interp)
++  }
++
++  /* Assertions: Segmentgrößen prüfen */
++  ASSERT(SIZEOF(.text) <= LENGTH(TEXT), "ERROR: .text/.rodata passt nicht in TEXT (16 KiB).")
++  ASSERT((__data_end - __data_start) + (__bss_end - __bss_start) <= LENGTH(DATA),
++         "ERROR: .data+.bss passt nicht in DATA (16 KiB).")
++  ASSERT((__fb_end - __fb_start) <= LENGTH(FB), "ERROR: Framebuffer passt nicht in FB (64 KiB).")
++}
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/test-ram-spi.s b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/test-ram-spi.s
+new file mode 100644
+index 0000000..154ad99
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/apps/test-ram-spi/test-ram-spi.s
+@@ -0,0 +1,18 @@
++
++.equ RAM_BASE_ADR, 0x00010000
++.equ FB_BASE_ADR,  0x00020000
++.equ SPI_BASE_ADR, 0x00030000
++
++.globl _start
++
++_start:
++
++li x1,RAM_BASE_ADR
++li x2, FB_BASE_ADR
++li x3, SPI_BASE_ADR
++
++addi x4, x0, 5
++sw x4, 0(x1)         # Write 5 at RAM_BASE_ADR
++lw x5, 0(x1)         # Read back from RAM_BASE_ADR
++
++j _start
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/cpu.sv b/PraktischerTeil/Verilog/CPU/Prozessor/src/cpu.sv
+index 83ab886..5814ffe 100644
+--- a/PraktischerTeil/Verilog/CPU/Prozessor/src/cpu.sv
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/cpu.sv
+@@ -26,15 +26,17 @@ module topmodule (
+ 	output logic ctrl_mosi,
+ 	output logic ctrl_spi_clk,
+ 	output logic ctrl_cs_n,
+-	output logic ctrl_clk
++	output logic ctrl_clk,
++
++	output logic button_up,
++	output logic button_down,
++	output logic button_left,
++	output logic button_right
+ 
+ );
+ 
+-wire [31:0] dmem_rdata_connect;
+-wire [31:0] spi_rdata_connect;
+ wire [31:0] instr_connect;
+-wire [31:0] bus_rdata_connect;
+-wire [31:0] spi_rdata;
++wire [15:0] controller_state;
+ wire spi_re;
+ wire imem_ce;
+ wire dmem_ce;
+@@ -43,17 +45,17 @@ wire fbuf_we;
+ wire [31:0] pc;
+ wire dmem_read;
+ wire[3:0] dmem_we;
++wire [31:0] dmem_rdata;
+ wire [31:0] bus_addr;
+ wire [31:0] bus_wdata;
+ wire [31:0] instr_addr;
+ wire [31:0] instr;
+ reg spi_ce;
+ 
+-
+-assign bus_rdata_connect =
+-    (((bus_addr >> 16) == 16'h0003) && spi_re) ? spi_rdata_connect :
+-    (((bus_addr >> 16) == 16'h0001)) ? dmem_rdata_connect : 32'b0;
+-
++assign button_left = ~controller_state[15];
++assign button_down = ~controller_state[11];
++assign button_right = ~controller_state[14];
++assign button_up = ~controller_state[10];
+ 
+ 
+ ram_module dmem (
+@@ -64,7 +66,7 @@ ram_module dmem (
+ 		.rst(rst),
+ 		.addr(bus_addr),
+ 		.data_in(bus_wdata),
+-		.data_out(dmem_rdata_connect)
++		.data_out(dmem_rdata)
+ );
+ 
+ rom_module imem (
+@@ -88,14 +90,17 @@ fsm machine(
+ 
+ 		//data memory
+ 		.bus_addr(bus_addr),
+-		.bus_rdata(bus_rdata_connect),
++		.bus_rdata(dmem_rdata),
+ 		.dmem_ce(dmem_ce),
+ 		.dmem_read(dmem_read),
+ 		.dmem_we(dmem_we),
+ 		.bus_wdata(bus_wdata),
+         .fbuf_we(fbuf_we),
++
++		// SPI controller
+ 		.spi_ce(spi_ce),
+-		.spi_re(spi_re)
++		.spi_re(spi_re),
++		.controller_state(controller_state)
+ );
+ 
+ framebuffer fb_inst(
+@@ -137,9 +142,7 @@ spi_controller spi_inst (
+     .cs_n(cs_n),
+     .mosi(mosi),
+     .miso(miso),
+-	.ce(spi_ce),
+-	.spi_rdata(spi_rdata_connect),
+-	.re(spi_re),
++	.controller_state(controller_state),
+ 
+     .ctrl_miso(ctrl_miso),
+     .ctrl_mosi(ctrl_mosi),
+@@ -157,10 +160,9 @@ module spi_controller (
+     output logic        cs_n,
+     output logic        mosi,    
+     input  logic        miso,
+-	input  logic  		ce,   
+-	input  logic  		re,
++	output logic[15:0] controller_state,
+ 
+-    output logic[31:0] spi_rdata,
++	// tracing signals for debugging/observation
+     output logic ctrl_miso,
+     output logic ctrl_mosi,
+     output logic ctrl_spi_clk,
+@@ -171,12 +173,6 @@ module spi_controller (
+ 
+ reg miso_reg;
+ 
+-always @(posedge clk) begin
+-	if(ce && re) begin
+-		spi_rdata <= {16'b0, recv_msg[1], recv_msg[0]};
+-	end
+-end
+-
+ always @(posedge clk) begin
+     miso_reg <= miso;
+     ctrl_spi_clk <= spi_clk;
+@@ -195,6 +191,7 @@ assign ctrl_miso = miso_reg;
+     localparam word_gap_cycles = 32;
+ `else*/
+     localparam wait_cntr_max = 100; //100
++	localparam cs2clk_delay = 500;
+     localparam word_gap_cycles = 1000; //1000
+     localparam idle_delay = 5000; //5000
+ //`endif
+@@ -209,20 +206,26 @@ logic [$clog2(idle_delay+1)-1:0] idle_cntr;
+ logic [7:0] send_msg [5:0];
+ logic [7:0] recv_msg [5:0];
+ 
++// create data strcuture for simulation
++`ifndef SYNTHESIS
++
++logic [7:0] sim_recv_msg [5:0];
+ initial begin
+-    send_msg[5] = 8'h00;
+-    send_msg[4] = 8'h00;
+-    send_msg[3] = 8'h00;
+-    send_msg[2] = 8'h00;
+-    send_msg[1] = 8'h42;
+-    send_msg[0] = 8'h01;
++	sim_recv_msg[0] = 8'hFF;
++    sim_recv_msg[1] = 8'h41;
++    sim_recv_msg[2] = 8'h5A;
++    sim_recv_msg[3] = 8'hEF;
++    sim_recv_msg[4] = 8'hFF;
+ end
+ 
++`endif
++
+ typedef enum logic [2:0] {
+     IDLE = 3'd1,
+-    PREPARE = 3'd2,
+-    SEND = 3'd3,
+-    WAIT = 3'd4
++	CSDELAY = 3'd2,
++    PREPARE = 3'd3,
++    SEND = 3'd4,
++    WAIT = 3'd5
+ } state_t;
+ 
+ state_t state;
+@@ -237,6 +240,14 @@ always @(posedge clk or posedge rst) begin
+         word_cntr <= '0;
+         wait_cntr <= '0;
+         idle_cntr <= '0;
++		controller_state <= 16'h0000;
++        // Initialize send_msg in reset to ensure proper synthesis
++        send_msg[0] <= 8'h01;
++        send_msg[1] <= 8'h42;
++        send_msg[2] <= 8'h00;
++        send_msg[3] <= 8'h00;
++        send_msg[4] <= 8'h00;
++        send_msg[5] <= 8'h00;
+     end
+     else begin
+     case (state)
+@@ -253,10 +264,22 @@ always @(posedge clk or posedge rst) begin
+             end else begin
+                 idle_cntr <= '0;
+                 cs_n <= 0;
+-                state <= PREPARE;
++                state <= CSDELAY;
+             end
+         end
+ 
++		CSDELAY: begin
++			cs_n <= 0;
++			spi_clk <= 1;
++			mosi <= 0;
++			if (wait_cntr < cs2clk_delay) begin
++				wait_cntr <= wait_cntr + 1'b1;
++			end else begin
++				wait_cntr <= '0;
++				state <= PREPARE;
++			end
++		end
++
+         PREPARE: begin
+             spi_clk <= 0;
+             cs_n <= 0;
+@@ -271,7 +294,9 @@ always @(posedge clk or posedge rst) begin
+         SEND: begin 
+             spi_clk <= 1;
+             cs_n <= 0;
+-            if (wait_cntr == wait_cntr_max - 1) begin
++            // Sample MISO early in the HIGH phase (shortly after rising edge)
++            // For CPHA=1, data is valid after the rising edge
++            if (wait_cntr == 1) begin
+                 recv_msg[word_cntr][bit_cntr] <= miso;
+             end
+             if(wait_cntr < wait_cntr_max) begin
+@@ -298,7 +323,10 @@ always @(posedge clk or posedge rst) begin
+                     state <= PREPARE;
+                     word_cntr <= word_cntr + 1'b1;
+                 end else begin
++					// received all data, update controller state and start over
++					// bits are active low, hence store bits inverted to make it easier to query in code
+                     state <= IDLE;
++					controller_state <= ~{recv_msg[3], recv_msg[4]};
+                     word_cntr <= 0;
+                 end
+             end
+@@ -327,7 +355,10 @@ module ram_module (
+ reg [31:0] ram_mem [4095:0];
+ reg [31:0] dout_reg;
+ 
+-wire [31:0] index = addr >> 2;
++// note we cannot just shift the address by >> 2 as before, because the RAM has only 4096 entries
++// if we shift >>2 the higher address bits from the address map (0x0001 <=) move into the index space
++// and create an out of bound access
++wire [31:0] index = {18'b0, addr[15:2]};
+ 
+ // readmem (index of first word, index of last word; both are zero-indexed)
+ initial begin
+@@ -348,7 +379,7 @@ always @(posedge clk) begin
+ 		dout_reg <= 32'b0;
+ 	end
+ 	else begin
+-		if(ce) begin
++		if (re && ce) begin
+ 			dout_reg <= ram_mem[index];
+ 		end
+ 	end
+@@ -361,9 +392,9 @@ always @(posedge clk) begin
+ 	else begin
+ 		// TODO: check whether we want to gate this update with RE or RE&CE signal here. Compare with SUG949E p.67
+ 		// currently we update data_out on every clock when not in reset.
+-		//if(re && ce) begin
+-		data_out <= dout_reg;
+-		//end
++		if(re && ce) begin
++			data_out <= dout_reg;
++		end
+ 	end
+ end
+ 
+@@ -629,7 +660,9 @@ module fsm (
+ 	output logic [3:0]  dmem_we,
+ 	output logic [31:0] bus_wdata,
+ 	output logic        spi_ce,
+-	output logic        spi_re
++	output logic        spi_re,	
++
++	input logic [15:0] controller_state
+ );
+ 
+ 	typedef enum reg[2:0]{
+@@ -846,6 +879,7 @@ module fsm (
+ 							if(((regfile[rs1] + imm) >> 16) == 16'h0003)begin
+ 								spi_ce <= 1'b1;
+ 								spi_re <= 1'b1;
++								$display("EX: prepare read from SPI at addr 0x%h", regfile[rs1] + imm);
+ 							end
+ 						end
+ 						7'b0100011: begin   //S type
+@@ -915,8 +949,18 @@ module fsm (
+ 					case (opcode)
+ 					7'b0000011: begin  // Load
+ 						// keep values for dmem_ce and dmem_read from EXECUTE stage, only active if read from data memory (not framebuffer)
++						// TODO: Check where we need to keep signals active for whole MEM stage
+ 						//dmem_ce <= 1;
+ 						//dmem_read <= 1;
++
++						`ifndef SYNTHESIS
++
++						if(spi_ce && spi_re) begin
++							$display("MEM1: prepare read from SPI at addr 0x%h", bus_addr);
++						end
++
++						`endif
++
+ 					end
+ 					7'b0100011: begin	// Store
+ 						// if address in framebuffer range
+@@ -985,10 +1029,15 @@ module fsm (
+ 					case(opcode) 
+ 						7'b0000011: begin  // Load
+ 						set_rd_flag <= 1;
+-						if(((regfile[rs1] + imm) >> 16) == 16'h0003)begin
++						if(bus_addr[31:16] == 16'h0003) begin
+ 							spi_ce <= 1'b0;
+ 							spi_re <= 1'b0;
+-							tmp_rd <= bus_rdata;
++							tmp_rd <= {16'b0, controller_state};
++							
++							`ifndef SYNTHESIS
++							$display("Read from SPI: addr = 0x%h , data 0x%h", bus_addr, controller_state);
++							`endif
++
+ 						end else begin
+ 						case (funct3)
+ 							3'b000: begin     //lb
+@@ -1016,7 +1065,7 @@ module fsm (
+ 								endcase
+ 							end
+ 							3'b010:       //lw
+-								tmp_rd <= bus_rdata;
++									tmp_rd <= bus_rdata;
+ 							3'b100: begin     //lbu
+ 								case (bus_addr[1:0])
+ 									2'b00:
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/src/test/tb.sv b/PraktischerTeil/Verilog/CPU/Prozessor/src/test/tb.sv
+index 962561e..9d4731f 100755
+--- a/PraktischerTeil/Verilog/CPU/Prozessor/src/test/tb.sv
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/src/test/tb.sv
+@@ -91,7 +91,7 @@ function string state_name(logic [3:0] state);
+ endfunction
+ 
+ initial begin
+-    #1000000;
++    #5000000;
+     $display("ERROR: Test timeout!");
+     $finish;
+ end
+diff --git a/PraktischerTeil/Verilog/CPU/Prozessor/surfer-state.* b/PraktischerTeil/Verilog/CPU/Prozessor/surfer-state.*
+new file mode 100644
+index 0000000..2ecd1d4
+--- /dev/null
++++ b/PraktischerTeil/Verilog/CPU/Prozessor/surfer-state.*
+@@ -0,0 +1,1437 @@
++(
++    show_hierarchy: None,
++    show_menu: None,
++    show_ticks: None,
++    show_toolbar: None,
++    show_tooltip: None,
++    show_scope_tooltip: None,
++    show_default_timeline: None,
++    show_overview: None,
++    show_statusbar: None,
++    align_names_right: None,
++    show_variable_indices: None,
++    show_variable_direction: None,
++    show_empty_scopes: None,
++    show_parameters_in_scopes: None,
++    parameter_display_location: None,
++    highlight_focused: None,
++    fill_high_values: None,
++    primary_button_drag_behavior: None,
++    arrow_key_bindings: None,
++    clock_highlight_type: None,
++    hierarchy_style: None,
++    autoload_sibling_state_files: None,
++    autoreload_files: None,
++    waves: Some((
++        source: File("/Users/plessl/Rep/CPU-Tim-orig/PraktischerTeil/Verilog/CPU/Prozessor/src/tb.vcd"),
++        format: Vcd,
++        active_scope: Some(WaveScope((
++            strs: [
++                "tb_cpu",
++                "uut",
++                "spi_inst",
++            ],
++            id: Wellen((11)),
++        ))),
++        items_tree: (
++            items: [
++                (
++                    item_ref: (2),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (12),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (13),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (11),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (9),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (27),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (26),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (1),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (5),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (6),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (8),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (15),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (17),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (18),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (30),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (19),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (20),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (23),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (25),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (21),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (22),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (29),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (24),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (31),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (33),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (42),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (39),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (40),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (36),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (34),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (35),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (37),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (32),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (44),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (47),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (43),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (49),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (3),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (10),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (48),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (45),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (46),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (51),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (52),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (53),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (57),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (56),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (54),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++                (
++                    item_ref: (55),
++                    level: 0,
++                    unfolded: true,
++                    selected: false,
++                ),
++            ],
++        ),
++        displayed_items: {
++            (37): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "fb_inst",
++                        ],
++                        id: Wellen((6)),
++                    ),
++                    name: "dout_b",
++                    id: Wellen((74)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…fb_inst.dout_b [3:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (49): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "led_inst",
++                        ],
++                        id: Wellen((8)),
++                    ),
++                    name: "oe_cntr",
++                    id: Wellen((98)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "oe_cntr [7:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (30): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "machine",
++                        ],
++                        id: Wellen((9)),
++                    ),
++                    name: "bus_rdata",
++                    id: Wellen((101)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "bus_rdata [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (48): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "led_inst",
++                        ],
++                        id: Wellen((8)),
++                    ),
++                    name: "latch_cntr",
++                    id: Wellen((97)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "latch_cntr [7:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (40): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "fb_inst",
++                        ],
++                        id: Wellen((6)),
++                    ),
++                    name: "re",
++                    id: Wellen((70)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…fb_inst.re",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (32): Divider((
++                color: Some("Yellow"),
++                background_color: Some("Gray"),
++                name: Some("ledctrl"),
++            )),
++            (25): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "dmem",
++                        ],
++                        id: Wellen((5)),
++                    ),
++                    name: "we",
++                    id: Wellen((55)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…dmem.we [3:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (3): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "display_oe",
++                    id: Wellen((39)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "display_oe",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (35): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "fb_inst",
++                        ],
++                        id: Wellen((6)),
++                    ),
++                    name: "raddr_b",
++                    id: Wellen((66)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "raddr_b [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (54): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "spi_inst",
++                        ],
++                        id: Wellen((11)),
++                    ),
++                    name: "miso",
++                    id: Wellen((174)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "miso",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (20): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "dmem",
++                        ],
++                        id: Wellen((5)),
++                    ),
++                    name: "ce",
++                    id: Wellen((59)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "ce",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (21): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "dmem",
++                        ],
++                        id: Wellen((5)),
++                    ),
++                    name: "addr",
++                    id: Wellen((60)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "addr [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (47): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "led_inst",
++                        ],
++                        id: Wellen((8)),
++                    ),
++                    name: "con_state",
++                    id: Wellen((92)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "con_state [3:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (12): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "rst",
++                    id: Wellen((19)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "rst",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (6): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "dout_b",
++                    id: Wellen((33)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…uut.dout_b [3:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (26): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "machine",
++                        ],
++                        id: Wellen((9)),
++                    ),
++                    name: "opcode",
++                    id: Wellen((149)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "opcode [6:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (5): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "dout_a",
++                    id: Wellen((34)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…uut.dout_a [3:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (34): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "fb_inst",
++                        ],
++                        id: Wellen((6)),
++                    ),
++                    name: "dout_a",
++                    id: Wellen((72)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…fb_inst.dout_a [3:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (1): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "bus_addr",
++                    id: Wellen((50)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…uut.bus_addr [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (17): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "machine",
++                        ],
++                        id: Wellen((9)),
++                    ),
++                    name: "x2",
++                    id: Wellen((117)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "x2 [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (42): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "machine",
++                        ],
++                        id: Wellen((9)),
++                    ),
++                    name: "bus_addr",
++                    id: Wellen((138)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…machine.bus_addr [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (45): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "led_inst",
++                        ],
++                        id: Wellen((8)),
++                    ),
++                    name: "row_addr",
++                    id: Wellen((99)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "row_addr [4:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: Some("Unsigned"),
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (8): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "imem_ce",
++                    id: Wellen((30)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "imem_ce",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (55): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "spi_inst",
++                        ],
++                        id: Wellen((11)),
++                    ),
++                    name: "mosi",
++                    id: Wellen((190)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "mosi",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (44): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "led_inst",
++                        ],
++                        id: Wellen((8)),
++                    ),
++                    name: "clk",
++                    id: Wellen((82)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…led_inst.clk",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (13): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "pc",
++                    id: Wellen((25)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "pc [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (9): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "instr",
++                    id: Wellen((29)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "instr [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: Some("RV32"),
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (57): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "spi_inst",
++                        ],
++                        id: Wellen((11)),
++                    ),
++                    name: "cs_n",
++                    id: Wellen((183)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "cs_n",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (31): Divider((
++                color: Some("Yellow"),
++                background_color: Some("Gray"),
++                name: Some("fbuf"),
++            )),
++            (15): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "machine",
++                        ],
++                        id: Wellen((9)),
++                    ),
++                    name: "x1",
++                    id: Wellen((106)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "x1 [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (56): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "spi_inst",
++                        ],
++                        id: Wellen((11)),
++                    ),
++                    name: "spi_clk",
++                    id: Wellen((191)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "spi_clk",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (19): Divider((
++                color: Some("Yellow"),
++                background_color: Some("Gray"),
++                name: Some("dmem"),
++            )),
++            (27): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "machine",
++                        ],
++                        id: Wellen((9)),
++                    ),
++                    name: "state",
++                    id: Wellen((159)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…machine.state [2:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: Some("Unsigned"),
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (10): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "latch",
++                    id: Wellen((27)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "latch",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (46): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "led_inst",
++                        ],
++                        id: Wellen((8)),
++                    ),
++                    name: "col_addr",
++                    id: Wellen((91)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "col_addr [5:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: Some("Unsigned"),
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (43): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "led_inst",
++                        ],
++                        id: Wellen((8)),
++                    ),
++                    name: "display_clk",
++                    id: Wellen((93)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "display_clk",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (33): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "fb_inst",
++                        ],
++                        id: Wellen((6)),
++                    ),
++                    name: "din",
++                    id: Wellen((71)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "din [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (39): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "fb_inst",
++                        ],
++                        id: Wellen((6)),
++                    ),
++                    name: "we",
++                    id: Wellen((68)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…fb_inst.we",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (23): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "dmem",
++                        ],
++                        id: Wellen((5)),
++                    ),
++                    name: "re",
++                    id: Wellen((56)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…dmem.re",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (29): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "dmem",
++                        ],
++                        id: Wellen((5)),
++                    ),
++                    name: "dout_reg",
++                    id: Wellen((62)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "dout_reg [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (18): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "machine",
++                        ],
++                        id: Wellen((9)),
++                    ),
++                    name: "x3",
++                    id: Wellen((128)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "x3 [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (2): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "clk",
++                    id: Wellen((17)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…uut.clk",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (11): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                        ],
++                        id: Wellen((4)),
++                    ),
++                    name: "instr_addr",
++                    id: Wellen((28)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "instr_addr [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (36): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "fb_inst",
++                        ],
++                        id: Wellen((6)),
++                    ),
++                    name: "raddr_a",
++                    id: Wellen((65)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "raddr_a [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (51): Divider((
++                color: Some("Yellow"),
++                background_color: None,
++                name: Some("SPI"),
++            )),
++            (52): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "spi_inst",
++                        ],
++                        id: Wellen((11)),
++                    ),
++                    name: "spi_rdata",
++                    id: Wellen((192)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "spi_rdata [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (53): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "spi_inst",
++                        ],
++                        id: Wellen((11)),
++                    ),
++                    name: "state",
++                    id: Wellen((193)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "…spi_inst.state [2:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (22): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "dmem",
++                        ],
++                        id: Wellen((5)),
++                    ),
++                    name: "data_in",
++                    id: Wellen((58)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "data_in [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++            (24): Variable((
++                variable_ref: (
++                    path: (
++                        strs: [
++                            "tb_cpu",
++                            "uut",
++                            "dmem",
++                        ],
++                        id: Wellen((5)),
++                    ),
++                    name: "data_out",
++                    id: Wellen((61)),
++                ),
++                color: None,
++                background_color: None,
++                display_name: "data_out [31:0]",
++                display_name_type: Unique,
++                manual_name: None,
++                format: None,
++                field_formats: [],
++                height_scaling_factor: None,
++                analog: None,
++            )),
++        },
++        display_item_ref_counter: 57,
++        viewports: [
++            (
++                curr_left: (0.5805696000344976),
++                curr_right: (1.1048575999913757),
++                target_left: (0.9836159999998928),
++                target_right: (0.10040960000000267),
++                move_start_left: (0.9836159999998928),
++                move_start_right: (0.10040960000000267),
++                move_duration: None,
++                move_strategy: Instant,
++            ),
++        ],
++        cursor: Some((1, [
++            1070676,
++        ])),
++        markers: {},
++        focused_item: None,
++        focused_transaction: (None, None),
++        default_variable_name_type: Unique,
++        scroll_offset: 13.618975,
++        display_variable_indices: true,
++        graphics: {},
++    )),
++    drag_started: true,
++    drag_source_idx: None,
++    drag_target_idx: None,
++    previous_waves: None,
++    count: None,
++    blacklisted_translators: [],
++    show_about: false,
++    show_keys: false,
++    show_gestures: false,
++    show_quick_start: false,
++    show_license: false,
++    show_performance: false,
++    show_logs: false,
++    show_cursor_window: false,
++    wanted_timeunit: NanoSeconds,
++    time_string_format: None,
++    show_url_entry: false,
++    variable_name_filter_focused: false,
++    variable_filter: (
++        name_filter_type: Contain,
++        name_filter_str: "",
++        name_filter_case_insensitive: true,
++        include_inputs: true,
++        include_outputs: true,
++        include_inouts: true,
++        include_others: true,
++        group_by_direction: false,
++    ),
++    sidepanel_width: Some(300.0),
++    ui_zoom_factor: None,
++    animation_enabled: None,
++    use_dinotrace_style: None,
++    transition_value: None,
++)
+\ No newline at end of file
+-- 
+2.52.0
+
