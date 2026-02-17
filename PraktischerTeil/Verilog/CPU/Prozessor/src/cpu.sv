@@ -1,5 +1,4 @@
 // Target FGPA: Gowin GW5A-LV25MG121C1/l0
-// TODO: double check FPGA type
 
 module topmodule (
 	input  logic       clk,
@@ -734,6 +733,7 @@ module fsm (
 			state <= FETCH;
 			pc <= 0;
 			tmp_rd <= 0;
+			set_rd_flag <= 0;
 			instr_addr <= 0;
 			dmem_read <= 0;
 			dmem_we <= 4'b0000;
@@ -922,14 +922,12 @@ module fsm (
 						7'b1101111: begin       //jal
 							set_rd_flag <= 1;
 							tmp_rd <= pc + 4;
-							pc_next <= (pc + imm)& ~1;
+							pc_next <= pc + imm;
 						end
 						7'b1100111: begin       //jalr
 							set_rd_flag <= 1;
-							if(funct3 == 3'b000) begin
-								tmp_rd <= pc + 4;
-								pc_next <= (regfile[rs1] + imm) & ~1;
-							end
+							tmp_rd <= pc + 4;
+							pc_next <= (regfile[rs1] + imm) & ~32'b1;
 						end
 						7'b0110111: begin      //lui
 							set_rd_flag <= 1;
@@ -939,8 +937,10 @@ module fsm (
 							set_rd_flag <= 1;
 							tmp_rd <= pc + imm;    //auipc
 						end
-						default:
+						default: begin
+							set_rd_flag <= 0;
 							$display("illegal instruction");
+						end
 					endcase
 					state <= MEMORY1;
 				end
@@ -1106,11 +1106,8 @@ module fsm (
 					bus_wdata <= 0;
 					bus_addr <= 0;
 					pc <= pc_next;
-					if(set_rd_flag) begin
-						if(rd != 0) regfile[rd] <= tmp_rd;
-						set_rd_flag <= 0;
-					end
-					else
+					if(set_rd_flag && (rd != 0)) regfile[rd] <= tmp_rd;
+					set_rd_flag <= 0;
 					state <= FETCH;
 					`ifndef SYNTHESIS
 					show_instruction(instr);

@@ -18,4 +18,4 @@ riscv64-unknown-elf-objcopy -O binary ${APP}.elf ${APP}.bin
 hexdump -v -e '1/4 "%08x\n"' ${APP}.bin > ${APP}.mi
 riscv64-unknown-elf-objdump --disassemble-all ${APP}.elf > ${APP}.disasm
 cp ${APP}.mi rom.mi
-
+cp ${APP}.mi ../../rom.mi
