@@ -177,7 +177,7 @@ always @(posedge clk) begin
     ctrl_spi_clk <= spi_clk;
     ctrl_mosi    <= mosi;
     ctrl_cs_n    <= cs_n;
-    ctrl_clk     <= clk;
+    ctrl_clk     <= ~spi_clk; // TODO: was clk;
 end
 
 
