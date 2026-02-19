@@ -52,9 +52,9 @@ wire [31:0] instr;
 reg spi_ce;
 
 assign button_left = ~controller_state[15];
-assign button_down = ~controller_state[11];
-assign button_right = ~controller_state[14];
-assign button_up = ~controller_state[10];
+assign button_down = ~controller_state[14];
+assign button_right = ~controller_state[13];
+assign button_up = ~controller_state[12];
 
 
 ram_module dmem (
@@ -424,6 +424,8 @@ end
 assign dout = ce ? rom_mem[addr >> 2] : 32'b0;
 
 endmodule
+
+// The framebuffer module implements a simple memory-mapped framebuffer with two separate read ports (dout_a and dout_b) for the LED controller. The design tool should infer a dual-ported block RAM from this module. The two read ports are needed because the LED controller requires to read two pixels concurrently that belong to rows i and i+32. The write port is shared for both memory areas (mem_a and mem_b) as the CPU only writes one pixel at a time, but the read ports are separate to allow concurrent access by the LED controller. The framebuffer has a latency of two cycles on reads, hence the LED controller needs to request data one cycle before it needs to use it.
 
 module framebuffer(
     input logic clk,
@@ -894,7 +896,8 @@ module fsm (
 							// store to framebuffer
 							if(((regfile[rs1] + imm) >> 16) == 16'h0002) begin
 							//if(bus_addr[31:15] == 16'h0002)begin
-								fbuf_we <= 1'b1;
+								//TODO: Test ob das zu früh ist, da wir erst in MEM1 das We-Signal aktivieren, oder ob wir das hier schon machen müssen
+								fbuf_we <= 1'b0;
 							end
 						end
 

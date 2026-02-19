@@ -76,66 +76,52 @@ void clear_display(){
 	}
 }
 
+// Funktion mit Parameter (wie udelay)
+__attribute__((noinline)) void param_delay(unsigned int count) {
+	for(unsigned int i = 0; i < count; i++) {
+		__asm__ volatile("nop");
+	}
+}
+
 int main(){
-	x = 32;
-	y = 32;
-	x_n = x;
-	y_n = y;
+	// Funktionierende Button-Steuerung
+	unsigned int px = 32;
+	unsigned int py = 32;
 	int dx = 0;
 	int dy = 0;
-	unsigned buttons;
-
-	unsigned col = 1;
-	//clear_display();
+	unsigned int buttons;
+	
 	while(1){
-		//fb_write(x, y, 4);
-		fb[x * 64 + y] = col;
-		//udelay(100000);
-
-		// TODO: Diese Instruktion ist nicht wirksam! Die LED bleibt einfach an!
-		// Compiler Problem?
-
-		//fb_write(x, y, 0);
-		fb[x * 64 + y] = 0;
-
-#if 0
+		// Pixel an
+		fb[py * 64 + px] = 7;
+		param_delay(30000);
+		
+		// Pixel aus
+		fb[py * 64 + px] = 0;
+		param_delay(30000);
+		
+		// Buttons lesen
 		buttons = spi[0];
-		if(buttons & BTN_DOWN){
-			dx = 0;
-			dy = -1;
-		} else if (buttons & BTN_LEFT){
+		
+		if(buttons & BTN_LEFT){
 			dx = -1;
 			dy = 0;
-		} else if (buttons & BTN_RIGHT){
+		} else if(buttons & BTN_RIGHT){
 			dx = 1;
 			dy = 0;
-		} else if (buttons & BTN_UP){
+		} else if(buttons & BTN_UP){
+			dx = 0;
+			dy = -1;
+		} else if(buttons & BTN_DOWN){
 			dx = 0;
 			dy = 1;
 		} else {
 			dx = 0;
-			dy = 0;	
+			dy = 0;
 		}
-#endif
-
 		
-		col = col + 1;
-		if (col > 5) col = 1;
-
-		dx = dy = 1;
-
-		x = (x + dx) % SCREEN_W;
-		y = (y + dy) % SCREEN_H;
+		px = (px + dx + 64) & 63;
+		py = (py + dy + 64) & 63;
 	}
-
-	#if 0
-	while(1){
-		fb_write(x_n, y_n, 1);
-		fb_write(x, y, 0);
-		x = x_n;
-		y = y_n; 
-		delay();
-	}
-	#endif
 	return 0;
 }
