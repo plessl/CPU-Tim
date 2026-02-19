@@ -340,6 +340,9 @@ endmodule
 
 // Single-port synchronous block RAM with byte-enables for writes
 // read has one cycle latency, compare with SUG949E p.67
+
+// TODO: actually, is two cycles latency in my counting. Keep as is for the moment to fix the processer implementation first but check later, whether we can optimize this by moving to a one cycle latency design.
+
 module ram_module (
 	input  logic        clk,
 	input  logic        re,
@@ -953,8 +956,8 @@ module fsm (
 					7'b0000011: begin  // Load
 						// keep values for dmem_ce and dmem_read from EXECUTE stage, only active if read from data memory (not framebuffer)
 						// TODO: Check where we need to keep signals active for whole MEM stage
-						//dmem_ce <= 1;
-						//dmem_read <= 1;
+						dmem_ce <= 1;
+						dmem_read <= 1;
 
 						`ifndef SYNTHESIS
 
