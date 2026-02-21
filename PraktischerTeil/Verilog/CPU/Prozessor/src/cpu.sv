@@ -945,7 +945,9 @@ module fsm (
 						end
 						default: begin
 							set_rd_flag <= 0;
+							`ifdef ENABLE_TRACE
 							$display("illegal instruction");
+							`endif
 						end
 					endcase
 					state <= MEMORY1;
@@ -959,12 +961,14 @@ module fsm (
 						dmem_ce <= 1;
 						dmem_read <= 1;
 
+						`ifdef ENABLE_TRACE
 						`ifndef SYNTHESIS
 
 						if(spi_ce && spi_re) begin
 							$display("MEM1: prepare read from SPI at addr 0x%h", bus_addr);
 						end
 
+						`endif
 						`endif
 
 					end
@@ -974,7 +978,9 @@ module fsm (
 						if(bus_addr[31:16] == 16'h0002) begin
 							fbuf_we <= 1'b1;
 							bus_wdata <= tmp_bus_wdata;
+							`ifdef ENABLE_TRACE
 							$display("Store to framebuffer at addr %h data %h", bus_addr, tmp_bus_wdata);
+							`endif
 						end else begin
 						dmem_ce <= 1;
 						dmem_read <= 0;
@@ -1026,8 +1032,7 @@ module fsm (
 						endcase
 						end
 					end
-					default:
-						$display("undefined");
+					default: ;
 					endcase
 				end
 				MEMORY2: begin
@@ -1040,8 +1045,10 @@ module fsm (
 							spi_re <= 1'b0;
 							tmp_rd <= {16'b0, controller_state};
 							
+							`ifdef ENABLE_TRACE
 							`ifndef SYNTHESIS
 							$display("Read from SPI: addr = 0x%h , data 0x%h", bus_addr, controller_state);
+							`endif
 							`endif
 
 						end else begin
@@ -1115,8 +1122,10 @@ module fsm (
 					if(set_rd_flag && (rd != 0)) regfile[rd] <= tmp_rd;
 					set_rd_flag <= 0;
 					state <= FETCH;
+					`ifdef ENABLE_TRACE
 					`ifndef SYNTHESIS
 					show_instruction(instr);
+					`endif
 					`endif
 					/*for (d = 0; d < 32; d = d + 1)
 						$display("register: %d, value: %d", d, regfile[d]);
