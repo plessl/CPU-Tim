@@ -1,0 +1,35 @@
+APP := "main"
+
+default: build
+
+build:
+    riscv64-unknown-elf-gcc \
+      -march=rv32i -mabi=ilp32 \
+      -ffreestanding -nostdlib -static \
+      -fno-pic -fno-pie \
+      -fdata-sections -ffunction-sections \
+      -Og \
+      -g \
+      -Wl,-T,link.ld \
+      -Wl,--gc-sections \
+      -Wall -Wextra \
+      boot.s {{APP}}.c \
+      -o {{APP}}.elf
+    riscv64-unknown-elf-objcopy -O binary {{APP}}.elf {{APP}}.bin
+    hexdump -v -e '1/4 "%08x\n"' {{APP}}.bin > {{APP}}.mi
+    riscv64-unknown-elf-objdump --disassemble-all -S {{APP}}.elf > {{APP}}.disasm
+    # Extract .data section for RAM initialization
+    riscv64-unknown-elf-objcopy -O binary --only-section=.data {{APP}}.elf {{APP}}.data.bin
+    @if [ -s {{APP}}.data.bin ]; then \
+        hexdump -v -e '1/4 "%08x\n"' {{APP}}.data.bin > ram.mi; \
+    else \
+        touch ram.mi; \
+    fi
+    cp {{APP}}.mi rom.mi
+
+install:
+    cp rom.mi ../../rom.mi
+    @if [ -f ram.mi ]; then cp ram.mi ../../ram.mi; fi
+
+clean:
+    rm -f {{APP}}.elf {{APP}}.bin {{APP}}.mi {{APP}}.disasm rom.mi ram.mi
