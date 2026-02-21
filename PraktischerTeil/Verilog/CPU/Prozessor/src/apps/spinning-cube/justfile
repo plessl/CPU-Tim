@@ -32,4 +32,4 @@ install:
     @if [ -f ram.mi ]; then cp ram.mi ../../ram.mi; fi
 
 clean:
-    rm -f {{APP}}.elf {{APP}}.bin {{APP}}.mi {{APP}}.disasm rom.mi
+    rm -f {{APP}}.elf {{APP}}.bin {{APP}}.mi {{APP}}.disasm rom.mi ram.mi

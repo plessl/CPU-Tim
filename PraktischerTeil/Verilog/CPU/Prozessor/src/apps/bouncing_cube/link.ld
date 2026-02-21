@@ -24,8 +24,9 @@ SECTIONS
 
   /* ------------------------------------------------------------
    * Writable data in RAM, load image stored in ROM after .text
+   * But we'll initialize it from the binary, not copy at runtime
    * ------------------------------------------------------------ */
-  .data : AT(LOADADDR(.text) + SIZEOF(.text))
+  .data : AT(ADDR(.text) + SIZEOF(.text))
   {
     __data_start = .;
     *(.data .data.*)
@@ -33,8 +34,8 @@ SECTIONS
     __data_end = .;
   } > RAM
 
-  /* Load address of .data in ROM */
-  __data_load = LOADADDR(.data);
+  /* The .data section will be in the binary at the ROM location */
+  /* but the build process will extract it and place it in ram.mi */
 
   /* ------------------------------------------------------------
    * Zero-initialized data in RAM
