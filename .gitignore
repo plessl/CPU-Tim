@@ -6,3 +6,6 @@ impl/
 *.mi
 *.disasm
 *.o
+*.vcd
+*.vvp
+*.log
