@@ -355,7 +355,6 @@ module ram_module (
 );
 
 reg [31:0] ram_mem [4095:0];
-reg [31:0] dout_reg;
 
 // note we cannot just shift the address by >> 2 as before, because the RAM has only 4096 entries
 // if we shift >>2 the higher address bits from the address map (0x0001 <=) move into the index space
@@ -365,6 +364,8 @@ wire [31:0] index = {18'b0, addr[15:2]};
 // readmem (index of first word, index of last word; both are zero-indexed)
 initial begin
 	$readmemh("ram.mi", ram_mem);
+	$display("RAM loaded: ram_mem[0] = %h", ram_mem[0]);
+	$display("RAM loaded: ram_mem[1] = %h", ram_mem[1]);
 end
 
 always @(posedge clk) begin
@@ -376,26 +377,19 @@ always @(posedge clk) begin
 	end
 end
 
-always @(posedge clk) begin
-	if(rst) begin
-		dout_reg <= 32'b0;
-	end
-	else begin
-		if (re && ce) begin
-			dout_reg <= ram_mem[index];
-		end
-	end
-end
-
+// Single-cycle read latency (synchronous read)
 always @(posedge clk) begin
 	if(rst) begin
 		data_out <= 32'b0;
 	end
 	else begin
-		// TODO: check whether we want to gate this update with RE or RE&CE signal here. Compare with SUG949E p.67
-		// currently we update data_out on every clock when not in reset.
-		if(re && ce) begin
-			data_out <= dout_reg;
+		if (re && ce) begin
+			data_out <= ram_mem[index];
+			`ifdef ENABLE_TRACE
+			`ifndef SYNTHESIS
+			$display("[RAM] Read: index=%h ram_mem[index]=%h -> data_out", index, ram_mem[index]);
+			`endif
+			`endif
 		end
 	end
 end
@@ -897,7 +891,7 @@ module fsm (
 								dmem_ce <= 1;
 							end
 							// store to framebuffer
-							if(((regfile[rs1] + imm) >> 16) == 16'h0002) begin
+							else if(((regfile[rs1] + imm) >> 16) == 16'h0002) begin
 							//if(bus_addr[31:15] == 16'h0002)begin
 								//TODO: Test ob das zu früh ist, da wir erst in MEM1 das We-Signal aktivieren, oder ob wir das hier schon machen müssen
 								fbuf_we <= 1'b0;
@@ -1051,7 +1045,7 @@ module fsm (
 							`endif
 							`endif
 
-						end else begin
+						end else if(bus_addr[31:16] == 16'h0001) begin
 						case (funct3)
 							3'b000: begin     //lb
 								case (bus_addr[1:0])
@@ -1108,6 +1102,7 @@ module fsm (
 						endcase
 						end
 					end
+					default: ;
 					endcase
 				end
 				WRITEBACK: begin
