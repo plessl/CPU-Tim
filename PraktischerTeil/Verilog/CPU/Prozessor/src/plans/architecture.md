@@ -21,15 +21,19 @@ The system uses a simple memory-mapped I/O scheme:
 | `0x0000_0000` - `0x0000_FFFF` | **ROM** | Instruction Memory (imem) |
 | `0x0001_0000` - `0x0001_FFFF` | **RAM** | Data Memory (dmem) |
 | `0x0002_0000` - `0x0002_FFFF` | **Framebuffer** | 64x64 LED Matrix Buffer |
-| `0x0003_0000` - `0x0003_FFFF` | **SPI Controller** | Dualshock 2 Controller Interface |
+| `0x0003_0000` | **SPI Controller P1** | Player 1 Dualshock 2 Controller (16-bit) |
+| `0x0003_0004` | **SPI Controller P2** | Player 2 Dualshock 2 Controller (16-bit) |
+| `0x0003_0008` - `0x0003_FFFF` | Reserved | Future expansion |
 
 ## Peripherals
 
-### SPI Controller
-- Continuously polls a PS2 Dualshock 2 controller.
-- Maps controller buttons to a 16-bit register.
-- Accessible at `0x0003_0000`.
+### SPI Controllers
+- Two independent SPI controllers continuously poll PS2 Dualshock 2 controllers.
+- Each controller maps buttons to a 16-bit register.
+- **P1 Controller**: Accessible at `0x0003_0000`
+- **P2 Controller**: Accessible at `0x0003_0004`
 - Buttons are active-low on the wire but inverted in hardware for active-high logic in C.
+- Both controllers poll independently at ~66Hz.
 
 ### LED Controller & Framebuffer
 - **Framebuffer**: Dual-ported RAM to allow simultaneous CPU writes and LED controller reads.

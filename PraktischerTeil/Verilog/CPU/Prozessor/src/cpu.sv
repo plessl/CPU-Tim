@@ -14,11 +14,17 @@ module topmodule (
     output logic [3:0] dout_a,
     output logic [3:0] dout_b,
 	
-	//SPI Controller	
-	output logic spi_clk,
-	output logic cs_n,
-	output logic mosi,
-	input  logic miso,
+	// P1 SPI Controller
+	output logic spi_clk_p1,
+	output logic cs_n_p1,
+	output logic mosi_p1,
+	input  logic miso_p1,
+	
+	// P2 SPI Controller
+	output logic spi_clk_p2,
+	output logic cs_n_p2,
+	output logic mosi_p2,
+	input  logic miso_p2,
 
 	//SPI Controller debug/observation signals
 	output logic ctrl_miso,
@@ -35,7 +41,8 @@ module topmodule (
 );
 
 wire [31:0] instr_connect;
-wire [15:0] controller_state;
+wire [15:0] controller_state;     // P1 controller
+wire [15:0] controller_state_p2;  // P2 controller
 wire spi_re;
 wire imem_ce;
 wire dmem_ce;
@@ -96,10 +103,11 @@ fsm machine(
 		.bus_wdata(bus_wdata),
         .fbuf_we(fbuf_we),
 
-		// SPI controller
+		// SPI controllers
 		.spi_ce(spi_ce),
 		.spi_re(spi_re),
-		.controller_state(controller_state)
+		.controller_state(controller_state),
+		.controller_state_p2(controller_state_p2)
 );
 
 framebuffer fb_inst(
@@ -134,13 +142,14 @@ LED_Controller led_inst(
         .display_clk(display_clk)
 );
 
-spi_controller spi_inst (
+// P1 SPI Controller
+spi_controller spi_inst_p1 (
     .clk(clk),
     .rst(rst),
-    .spi_clk(spi_clk),
-    .cs_n(cs_n),
-    .mosi(mosi),
-    .miso(miso),
+    .spi_clk(spi_clk_p1),
+    .cs_n(cs_n_p1),
+    .mosi(mosi_p1),
+    .miso(miso_p1),
 	.controller_state(controller_state),
 
     .ctrl_miso(ctrl_miso),
@@ -148,6 +157,24 @@ spi_controller spi_inst (
     .ctrl_spi_clk(ctrl_spi_clk),
     .ctrl_cs_n(ctrl_cs_n),
     .ctrl_clk(ctrl_clk)
+);
+
+// P2 SPI Controller
+spi_controller spi_inst_p2 (
+    .clk(clk),
+    .rst(rst),
+    .spi_clk(spi_clk_p2),
+    .cs_n(cs_n_p2),
+    .mosi(mosi_p2),
+    .miso(miso_p2),
+	.controller_state(controller_state_p2),
+
+    // P2 debug signals not connected (can be added if needed)
+    .ctrl_miso(),
+    .ctrl_mosi(),
+    .ctrl_spi_clk(),
+    .ctrl_cs_n(),
+    .ctrl_clk()
 );
 
 endmodule
@@ -658,9 +685,10 @@ module fsm (
 	output logic [3:0]  dmem_we,
 	output logic [31:0] bus_wdata,
 	output logic        spi_ce,
-	output logic        spi_re,	
+	output logic        spi_re,
 
-	input logic [15:0] controller_state
+	input logic [15:0] controller_state,     // P1 controller
+	input logic [15:0] controller_state_p2   // P2 controller
 );
 
 	typedef enum reg[2:0]{
@@ -1037,13 +1065,25 @@ module fsm (
 						if(bus_addr[31:16] == 16'h0003) begin
 							spi_ce <= 1'b0;
 							spi_re <= 1'b0;
-							tmp_rd <= {16'b0, controller_state};
 							
-							`ifdef ENABLE_TRACE
-							`ifndef SYNTHESIS
-							$display("Read from SPI: addr = 0x%h , data 0x%h", bus_addr, controller_state);
-							`endif
-							`endif
+							// Address decoding: bit 2 selects controller
+							// 0x0003_0000 -> P1 (bit 2 = 0)
+							// 0x0003_0004 -> P2 (bit 2 = 1)
+							if(bus_addr[2] == 1'b0) begin
+								tmp_rd <= {16'b0, controller_state};
+								`ifdef ENABLE_TRACE
+								`ifndef SYNTHESIS
+								$display("Read from SPI P1: addr = 0x%h , data 0x%h", bus_addr, controller_state);
+								`endif
+								`endif
+							end else begin
+								tmp_rd <= {16'b0, controller_state_p2};
+								`ifdef ENABLE_TRACE
+								`ifndef SYNTHESIS
+								$display("Read from SPI P2: addr = 0x%h , data 0x%h", bus_addr, controller_state_p2);
+								`endif
+								`endif
+							end
 
 						end else if(bus_addr[31:16] == 16'h0001) begin
 						case (funct3)

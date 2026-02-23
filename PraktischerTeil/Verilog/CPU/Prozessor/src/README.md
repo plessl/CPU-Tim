@@ -18,10 +18,14 @@ The system uses a simple memory-mapped I/O scheme:
 | `0x0000_0000` - `0x0000_FFFF` | **ROM** | Instruction Memory (64KB) |
 | `0x0001_0000` - `0x0001_FFFF` | **RAM** | Data Memory (64KB) |
 | `0x0002_0000` - `0x0002_FFFF` | **Framebuffer** | 64x64 LED Matrix Buffer |
-| `0x0003_0000` - `0x0003_FFFF` | **SPI Controller** | Dualshock 2 Controller Interface |
+| `0x0003_0000` | **SPI Controller P1** | Player 1 Dualshock 2 Controller (16-bit) |
+| `0x0003_0004` | **SPI Controller P2** | Player 2 Dualshock 2 Controller (16-bit) |
 
 ### Peripherals
-- **SPI Controller**: Continuously queries a PS2 Dualshock 2 game controller.
+- **SPI Controllers**: Two independent SPI controllers continuously poll PS2 Dualshock 2 game controllers
+  - **P1 Controller**: Memory-mapped at `0x0003_0000`
+  - **P2 Controller**: Memory-mapped at `0x0003_0004`
+  - Both controllers poll independently at ~66Hz
 - **LED Matrix Controller**: Drives a HUB75E-compatible 64x64 LED matrix using a dual-ported framebuffer.
 
 ## Project Structure

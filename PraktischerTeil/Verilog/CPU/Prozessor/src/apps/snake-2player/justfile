@@ -1,0 +1,43 @@
+APP := "snake-2player"
+
+# Build the application
+build:
+    riscv64-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Og -g -nostdlib -nostartfiles \
+        -T link.ld boot.s main.c -o {{APP}}.elf
+    riscv64-unknown-elf-objcopy -O binary {{APP}}.elf {{APP}}.bin
+    riscv64-unknown-elf-objdump -d {{APP}}.elf > {{APP}}.disasm
+    riscv64-unknown-elf-objcopy -O verilog {{APP}}.elf {{APP}}.mi
+    @# Extract .data section for RAM initialization
+    riscv64-unknown-elf-objcopy -O binary --only-section=.data {{APP}}.elf {{APP}}.data.bin
+    @if [ -s {{APP}}.data.bin ]; then \
+        hexdump -v -e '1/4 "%08x\n"' {{APP}}.data.bin > ram.mi; \
+        echo "Created ram.mi with initialized data"; \
+    else \
+        python3 -c "print('@00000000\n' + '00000000\n' * 4096)" > ram.mi; \
+        echo "Created empty ram.mi (no initialized data)"; \
+    fi
+    cp {{APP}}.mi rom.mi
+    @echo "Build complete: {{APP}}.elf, {{APP}}.bin, {{APP}}.disasm, rom.mi, ram.mi"
+
+# Install ROM/RAM files to project root
+install:
+    cp rom.mi ../../rom.mi
+    @echo "Installed rom.mi as ../../rom.mi"
+    cp ram.mi ../../ram.mi
+    @echo "Installed ram.mi as ../../ram.mi"
+
+# Clean build artifacts
+clean:
+    rm -f {{APP}}.elf {{APP}}.bin {{APP}}.disasm {{APP}}.mi {{APP}}.data.bin rom.mi ram.mi
+
+# Build and install in one step
+all: build install
+
+# Show memory usage
+size:
+    riscv64-unknown-elf-size {{APP}}.elf
+
+# Check for illegal instructions (mul/div/rem)
+check:
+    @echo "Checking for M-extension instructions (mul/div/rem)..."
+    @grep -E "^\s+[0-9a-f]+:\s+[0-9a-f]+\s+(mul|div|rem)" {{APP}}.disasm || echo "✓ No M-extension instructions found"

@@ -31,9 +31,9 @@ IO_PORT "clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3;
 |   18 |  E2 | 
 
 
-## Mapping of PS2 Dual Shock Controller
+## Mapping of PS2 Dual Shock Controllers
 
-
+### Player 1 (P1) Controller
 P1  | CS1N |  F5
     | MOSI |  G7
     | MISO |  H8
@@ -41,12 +41,17 @@ P1  | CS1N |  F5
     | GND  | GND
     | 3V3  | 3V3
 
+Memory Address: `0x0003_0000`
+
+### Player 2 (P2) Controller
 P2  | CS2N |  G5
     | MOSI |  G8
     | MISO |  H7
     | SCLK |  J5
     | GND  | GND
     | 3V3  | 3V3
+
+Memory Address: `0x0003_0004`
 
 
 ## HUB75E PMOD (matrix display, connected to first two ports of board, closest to USB connectre)
